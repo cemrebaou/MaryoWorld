@@ -1,7 +1,7 @@
 // MaryoWorld - ayarlar. Her degisiklikte surum artirilir.
 'use strict';
 const CFG = {
-  surum: 'v0.04',
+  surum: 'v0.05',
   oyunAdi: 'MARYO WORLD',
 
   // Ekran (mantiksal cozunurluk; yukseklik sabit, genislik orana gore)
@@ -21,6 +21,17 @@ const CFG = {
   maxInis: 34,         // kopmadan inilebilen yukseklik
   coyote: 0.10,
   ziplaTampon: 0.13,
+  dusmeOlum: 215,      // bundan yuksekten dusus oldurur
+
+  // Egilme
+  egilHiz: 0.5,        // egilerek yurume hizi orani
+  egilCokme: 46,       // kalcanin alcalmasi (px)
+  boyAyakta: 164,
+  boyEgik: 104,
+
+  // Dik merdiven (tirmanma)
+  tirmanHiz: 118,      // px/sn
+  basamakAra: 22,
 
   // Iskelet olculeri (px)
   uyluk: 41,
@@ -34,8 +45,9 @@ const CFG = {
   onKol: 29,
   adim: 54,            // adim uzunlugu
 
-  // Isik takibi (projektor)
-  yakalanmaSure: 0.42,
+  // Tehditler
+  yakalanmaSure: 0.42, // isikta acikta kalma suresi
+  kalasSure: 1.15,     // curuk kalas uzerinde durma suresi
 
   // Metinler
   metin: {
@@ -45,6 +57,12 @@ const CFG = {
     son1: 'YAŞAM SİNYALİ BULUNDU',
     son2: 'DEMO SONU',
     tekrar: 'tekrar oynamak için dokun',
-    yakalandin: 'TESPİT EDİLDİN'
+    yakalandin: 'TESPİT EDİLDİN',
+    hasar: 'GÖVDE HASARI',
+    ipEgil: 'EĞİL  ▼',
+    ipSaklan: 'SİPERİN ARKASINDA EĞİL  ▼',
+    ipTirman: 'TIRMAN  ▲',
+    ipIn: 'MERDİVENDEN İN  ▼',
+    ipEtk: 'ETKİLEŞİM  E'
   }
 };
