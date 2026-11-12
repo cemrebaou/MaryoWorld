@@ -1,4 +1,4 @@
-# MaryoWorld - oyun notlari (v0.07)
+# MaryoWorld - oyun notlari (v0.08)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -138,3 +138,13 @@ Tum gorseller kodla cizilir. `www/assets/` icine su adlarla dosya konursa otomat
 Yaklasik x: boru 6450, tabla 6920, projektor 7500, dik merdiven 9690, fabrika 11200, avlu 13600, tepeler 15100,
 platform 18640, dronlar 20500, projektor 2 22340, vinc yolu 24540, depo 26740, tuneller 28500, guc hucresi 30400
 (yuva 30676, hucre 32306, asansor 32800), yuksek yol 33400, dron koridoru 35570, son yaklasim 37900, kapi 40960.
+
+## Oyuncunun eli (dokunma cumleleri) ve gizli oksama
+- Bir etkilesim ekrana DOKUNARAK yaptirilirsa ve o noktanin kendi dusuncesi yoksa robot `metin.el` listesinden
+  siradaki cumleyi soyler ("Yalniz yurumuyorum. Bir el, elimin hemen yaninda.").
+- Gizli: robotun ustunde parmak 5 sn boyunca tekrar tekrar yukaridan asagi cekilirse (oksama) gogus isigi buyur ve
+  `metin.sev` listesinden bir cumle soyler ("Bana dokundugunu hissediyorum."). 7 sn sonra yeniden yapilabilir.
+
+## Diller
+Tum metinler `config.js` icinde `CFG.diller.tr` altindadir; oyun `CFG.metin` uzerinden okur.
+Yeni dil: `diller` icine ayni anahtarlarla blok eklenir (eksikler Turkceden tamamlanir). Secim: `?dil=en` ya da cihaz dili.

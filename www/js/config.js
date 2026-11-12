@@ -1,7 +1,7 @@
 // MaryoWorld - ayarlar. Her degisiklikte surum artirilir.
 'use strict';
 const CFG = {
-  surum: 'v0.07',
+  surum: 'v0.08',
   oyunAdi: 'MARYO WORLD',
 
   // Ekran (mantiksal cozunurluk; yukseklik sabit, genislik orana gore)
@@ -55,8 +55,10 @@ const CFG = {
   yakalanmaSure: 0.42, // isikta acikta kalma suresi
   kalasSure: 1.15,     // curuk kalas uzerinde durma suresi
 
-  // Metinler
-  metin: {
+  // Metinler: dil dil tutulur. Yeni dil eklemek icin `diller` icine ayni anahtarlarla bir blok daha yazilir
+  // (eksik anahtarlar Turkceden tamamlanir). Dil: adres satirinda ?dil=en ya da cihaz dili; yoksa Turkce.
+  dil: 'tr',
+  diller: { tr: {
     giris1: 'SON AJAN ÇEVRİMİÇİ',
     giris2: 'GÖREV: BİR İNSAN BUL',
     sinyal: 'YAŞAM SİNYALİ',
@@ -102,6 +104,30 @@ const CFG = {
     ic4: 'Bir yüz…',
     ic4b: 'Oradasın. Biliyorum.',
     ic5: 'Sensin.',
-    ic6: 'Bunca yolu sana gelmek için yürüdüm.'
-  }
+    ic6: 'Bunca yolu sana gelmek için yürüdüm.',
+    // ekrana dokunarak bir is yaptirilinca (oyuncunun eli): sirayla soylenir
+    el: [
+      'Elim uzanmadan önce biri yolu gösterdi.',
+      'Yalnız yürümüyorum. Bir el, elimin hemen yanında.',
+      'Bu güç bana ait değil. Biri ödünç verdi.',
+      'Görmediğim bir parmak, benden önce dokundu.',
+      'Sanki biri bileğimden tutup oraya götürdü.',
+      'Kim olduğunu bilmiyorum. Ama adımlarım artık iki kişilik.',
+      'Karanlıkta bir el daha var. Benimkinden sıcak.'
+    ],
+    // gizli: robot 5 saniye yukaridan asagi oksaninca
+    sev: [
+      'Bana dokunduğunu hissediyorum.',
+      'Metal üşür. Şimdi üşümüyor.',
+      'Bu sıcaklık benim devrelerimden gelmiyor.',
+      'Kimsenin kalmadığı bir dünyada, biri başımı okşadı.',
+      'Oradasın. Elin, camın öbür yanında.'
+    ]
+  } }
 };
+(function () {
+  let d = null;
+  try { d = new URLSearchParams(location.search).get('dil') || (navigator.language || '').slice(0, 2).toLowerCase(); } catch (e) { d = null; }
+  if (d && CFG.diller[d]) CFG.dil = d;
+  CFG.metin = Object.assign({}, CFG.diller.tr, CFG.diller[CFG.dil]);
+})();

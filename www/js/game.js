@@ -28,7 +28,8 @@
   let icerde = false;                              // kasanin icindeki oda
   const F = { faz: 0, t: 0, temas: 0, elde: false, soz: {}, ex: 0, ey: 0, px: 0, py: 0, beyaz: 0 };
   let video = null, kamDurum = 'yok';              // yok | istek | var | red
-  const isaret = { bas: false, x: 0, y: 0, yeni: false };    // parmak / fare (mantiksal ekran koordinati)
+  const isaret = { bas: false, x: 0, y: 0, yeni: false, sonAsagi: -9 };
+  const sev = { t: 0, bekle: 0, sira: 0, elSira: 0 };       // gizli oksama + dokunma cumleleri    // parmak / fare (mantiksal ekran koordinati)
   let katman = [], onPlan = [], yagmur = [], toz = [], sicrama = [];
   const girdi = { x: 0, zipla: false, egil: false, etk: false };
   const tus = {};
@@ -231,7 +232,10 @@
   // ekrana dogrudan dokunma: etkilesim noktasina dokununca robot gidip onu kullanir; bitiste el parmagi izler
   function isaretOku(e) {
     const cw = cv.clientWidth || 1, ch = cv.clientHeight || 1;
+    const ey = isaret.y;
     isaret.x = e.offsetX * W / cw; isaret.y = e.offsetY * H / ch;
+    // robotun ustunde yukaridan asagi cekilen parmak = oksama
+    if (isaret.bas && isaret.y - ey > 0.5 && robot && Math.abs(isaret.x + cam.x - robot.x) < 75 && isaret.y + cam.y > robot.y - 210 && isaret.y + cam.y < robot.y + 25) isaret.sonAsagi = zaman;
   }
   cv.addEventListener('pointerdown', (e) => {
     isaretOku(e); isaret.bas = true; isaret.yeni = true;
@@ -260,6 +264,19 @@
   }
 
   function dusun(ad) { if (CFG.metin[ad]) dsn = { ad: ad, t: 0 }; }
+  // listeden siradaki cumle (ayni cumle ust uste gelmez)
+  function dusunSira(liste, alan) {
+    const l = CFG.metin[liste];
+    if (!l || !l.length) return;
+    dsn = { metin: l[sev[alan] % l.length], t: 0 };
+    sev[alan]++;
+  }
+  // gizli: robot 5 sn boyunca tekrar tekrar yukaridan asagi oksanirsa bunu hisseder
+  function sevGuncelle(dt) {
+    sev.bekle -= dt;
+    if (durum === 'oyun' && zaman - isaret.sonAsagi < 0.8) sev.t += dt; else sev.t = Math.max(0, sev.t - dt * 2);
+    if (sev.t >= 5 && sev.bekle <= 0) { sev.t = 0; sev.bekle = 7; dusunSira('sev', 'sira'); }
+  }
 
   function devir(e) {
     if (!e.periyot) return 0;
@@ -436,7 +453,8 @@
         if (Math.abs(wx - e.x) < 46 && wy > e.y - e.h - 60 && wy < e.y + 10) sec = e;
       }
     }
-    if (sec && !robot.etk && robot.etkBasla(sec.x, sec.y - sec.h, sec.egil)) etkSecili = sec;
+    const dokunuldu = !!sec && sec !== etkYakin || (!!sec && isaret.yeni && !(girdi.etk && !etkOnceki));
+    if (sec && !robot.etk && robot.etkBasla(sec.x, sec.y - sec.h, sec.egil)) { etkSecili = sec; sec.dokun = dokunuldu; }
     etkOnceki = girdi.etk;
 
     if (robot.etkOlay && etkSecili) {
@@ -456,6 +474,7 @@
         if (e.kapi) kapiAc = true;
         if (e.hat) dusun(B.hatlar.every((h) => h.yapildi) ? 'dHat2' : 'dHat1');
         else if (e.dusun) dusun(e.dusun);
+        else if (e.dokun) dusunSira('el', 'elSira');      // isi oyuncunun eli yaptirdi
       }
       etkSecili = null;
     }
@@ -595,6 +614,7 @@
       tehlikeGuncelle(dt);
       etkiGuncelle(dt);
     }
+    sevGuncelle(dt);
     isaret.yeni = false;
     sars = damp(sars, 0, 9, dt);
 
@@ -1512,7 +1532,7 @@
     // cekirdek: sinyal yaklastikca hizlanan nabiz
     const yakin = icerde ? 1 + F.temas * 0.5 : clamp(robot.x / B.bitisX, 0, 1);
     const nabiz = Math.pow(0.5 + 0.5 * Math.sin(zaman * (2.2 + yakin * 7)), 3);
-    isin(ctx, K.cekX - cam.x, K.cekY - cam.y, 4 + nabiz * (9 + (icerde ? F.temas * 6 : 0)), '255,190,110', (0.45 + nabiz * 0.55) * gozA);
+    isin(ctx, K.cekX - cam.x, K.cekY - cam.y, 4 + sev.t * 3 + nabiz * (9 + (icerde ? F.temas * 6 : 0)), '255,190,110', (0.45 + nabiz * 0.55) * gozA);
     ctx.globalCompositeOperation = 'source-over';
 
     if (!icerde) {
@@ -1577,7 +1597,7 @@
       }
     }
     // robotun dusuncesi (sicak renkte, altta)
-    if (dsn) yazi(M[dsn.ad], W / 2, H * 0.865, 17, gecis(dsn.t, 0, 4.6, 0.5) * 0.92, 'center', 1.5, F.beyaz > 0.3 ? '60,40,24' : '255,214,170');
+    if (dsn) yazi(dsn.metin || M[dsn.ad], W / 2, H * 0.865, 17, gecis(dsn.t, 0, 4.6, 0.5) * 0.92, 'center', 1.5, F.beyaz > 0.3 ? '60,40,24' : '255,214,170');
     if (durum === 'geri' && geriNeden === 'yakalandi') yazi(M.yakalandin, W / 2, H * 0.4, 20, gecis(dZaman, 0.1, 1.2, 0.3));
     if (durum === 'geri' && geriNeden === 'hasar') yazi(M.hasar, W / 2, H * 0.4, 20, gecis(dZaman, 0.1, 1.2, 0.3));
     if (durum === 'final') {
