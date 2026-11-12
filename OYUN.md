@@ -83,7 +83,7 @@ parlamalar (lambalar, lazerler, elektrik arklari, durum isiklari) -> yer sisi ->
 on plan bulanik siluetler (1.55, karakterin onunden gecer) -> vinyet + gren.
 
 ## Sesler
-`www/js/audio.js` + `www/assets/sounds/` (ayri modul; `Robot.guncelle`yi sarar): yagmur ambiyansi, robot hareket dongusu, adim ve inis sesleri.
+`www/js/audio.js` + `www/assets/sounds/` (ayri modul; `Robot.guncelle`yi sarar): yagmur ambiyansi, adim ve inis sesleri.
 
 ## Fotograf ile degistirilebilen gorseller
 Tum gorseller kodla cizilir. `www/assets/` icine su adlarla dosya konursa otomatik onlarin yerine gecer:

@@ -11,7 +11,7 @@ Oyun `www/` altinda; bagimliligi yok (saf Canvas 2D). Test: `www/index.html`.
   Force push yapilmaz, gecmis silinmez.
 - Oyun bilgileri (olculer, bolum yapisi, kurallar) `OYUN.md` icinde tutulur; degisince guncellenir.
 - Dokunmatik dugmeler PC'de de gorunur kalir.
-- Sesler ayri modulde: `www/js/audio.js` + `www/assets/sounds/` (yagmur ambiyansi, robot hareket dongusu, adim sesleri). Oyun koduna dokunmaz, `Robot.guncelle`yi sarar. Ses seviyeleri `SES.AYAR` icinde.
+- Sesler ayri modulde: `www/js/audio.js` + `www/assets/sounds/` (yagmur ambiyansi, adim sesleri). Oyun koduna dokunmaz, `Robot.guncelle`yi sarar. Ses seviyeleri `SES.AYAR` icinde.
 
 ## Dosyalar
 - `config.js` ayarlar + metinler, `util.js` yardimcilar, `level.js` zemin ve bolum,
