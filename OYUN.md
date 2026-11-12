@@ -1,4 +1,4 @@
-# MaryoWorld - oyun notlari (v0.08)
+# MaryoWorld - oyun notlari (v0.09)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -148,3 +148,17 @@ platform 18640, dronlar 20500, projektor 2 22340, vinc yolu 24540, depo 26740, t
 ## Diller
 Tum metinler `config.js` icinde `CFG.diller.tr` altindadir; oyun `CFG.metin` uzerinden okur.
 Yeni dil: `diller` icine ayni anahtarlarla blok eklenir (eksikler Turkceden tamamlanir). Secim: `?dil=en` ya da cihaz dili.
+
+## Olay sesleri (fx_*.mp3)
+earshot (github.com/Leonxlnx/earshot, MIT) ses bankasindan uretildi; `audio.js` icindeki `FX` tablosunda seviyeleri var.
+Oyun `SES.cal(ad, siddet)` ile calar (game.js `ses()` uzakliga gore kisar).
+| Ses | Ne zaman | Banka |
+|---|---|---|
+| pres | pres yere vurunca | impact/metal |
+| dugme / salter / fis / hucre | etkilesim tamamlaninca | toggle/latch, toggle/rocker, pro_zip/down, pro_pop_in/deep |
+| red | kosulu saglanmayan etkilesim | ui_pop/fall |
+| bariyer / guc / kapi | bariyer kapaninca, guc gelince, kasa kapisi acilirken | downlifter/synth_fall, logo_sting/soft_bloom, pro_impact/rumble |
+| alarm / hasar / dustu | yakalanma, ezilme-carpilma, dusme | glitch/burst, cut_hit/punch, sub_drop/punch |
+| kalas / sandik / basamak | kalas kirilinca, sandik itilmeye baslaninca, dik merdivende her basamak | knock/wood, knock/desk, tap/knuckle |
+| elektrik | yakindaki birikinti elektriklenince | pro_glitch/crunchy |
+| el / sev / buldum | dokunma cumlesi, gizli oksama, bitis | hover_tick/ping, shimmer/m1, logo_sting/reverse_bloom |

@@ -35,6 +35,13 @@
   const tus = {};
   const dok = { sol: false, sag: false, zipla: false, egil: false, etk: false };
 
+  // olay sesi (audio.js varsa). uzak = sesin kaynagi; uzaklastikca kisilir
+  const ses = (ad, uzakX, g) => {
+    if (typeof SES === 'undefined' || !SES.cal) return;
+    const k = uzakX === undefined || uzakX === null ? 1 : clamp(1 - Math.abs(uzakX - robot.x) / 1000, 0, 1);
+    SES.cal(ad, k * (g === undefined ? 1 : g));
+  };
+
   // gorseli mantiksal olcusuyle bas (gorseller ekrandan daha yuksek cozunurlukte uretilir)
   const bas = (c, sp, x, y) => { c.drawImage(sp, x, y, sp.lw, sp.lh); };
   const gorunur = (e) => !e.onkosul || e.onkosul.every((k) => k.yapildi);
@@ -275,7 +282,7 @@
   function sevGuncelle(dt) {
     sev.bekle -= dt;
     if (durum === 'oyun' && zaman - isaret.sonAsagi < 0.8) sev.t += dt; else sev.t = Math.max(0, sev.t - dt * 2);
-    if (sev.t >= 5 && sev.bekle <= 0) { sev.t = 0; sev.bekle = 7; dusunSira('sev', 'sira'); }
+    if (sev.t >= 5 && sev.bekle <= 0) { sev.t = 0; sev.bekle = 7; dusunSira('sev', 'sira'); ses('sev'); }
   }
 
   function devir(e) {
@@ -323,6 +330,8 @@
       const nx0 = clamp(s.x0 + d * CFG.itmeHiz * dt, Math.min(lo, s.x0), Math.max(hi, s.x0));
       robot.x += nx0 - s.x0;                         // robot sandikla birlikte ilerler (ayaklar adim atarak gelir)
       s.x0 = nx0; s.x1 = nx0 + s.w;
+      if (zaman - (s.sesT || -9) > 0.6) ses('sandik');     // itmeye baslarken tok bir ses
+      s.sesT = zaman;
       robot.itiyor = true;
     }
     // plaka: ustunde robot ya da sandik varken hedefleri kapatir (dugmeyle kilitlenmis olanlar acik kalir)
@@ -385,7 +394,7 @@
           robot.duvarlar.push(p.x - p.w / 2 - 10, p.x + p.w / 2 + 10);
         }
       }
-      if (k >= 1 && p.onceki < 1 && Math.abs(p.x - cam.x - W / 2) < W * 0.7) { sars = Math.max(sars, 5); tozEkle(p.x, p.y, 10, p.w + 30, 150); }
+      if (k >= 1 && p.onceki < 1 && Math.abs(p.x - cam.x - W / 2) < W * 0.7) { sars = Math.max(sars, 5); tozEkle(p.x, p.y, 10, p.w + 30, 150); ses('pres', p.x); }
       p.onceki = k;
     }
     // lazer bariyerleri (dugme / plaka ile kapanir)
@@ -400,6 +409,8 @@
       if (e.kapali) { e.acik = false; e.yakinda = false; continue; }
       if (!e.periyot) { e.acik = true; e.yakinda = false; }
       else { const f = devir(e); e.acik = f < 0.5; e.yakinda = f > 0.86; }
+      if (e.acik && !e.sesAcik) ses('elektrik', (e.x0 + e.x1) / 2, Math.abs((e.x0 + e.x1) / 2 - rx) < 520 ? 1 : 0);
+      e.sesAcik = e.acik;
       if (e.acik && robot.yerde && rx > e.x0 + 6 && rx < e.x1 - 6 && Math.abs(ry - e.y) < 12) olum = 'hasar';
     }
     // lazerler: ust = egilerek, surun = surunerek, alt = ziplayarak (ya da sonukken) gecilir
@@ -421,7 +432,7 @@
         continue;
       }
       k.t += dt;
-      if (k.e.aktif && k.t > CFG.kalasSure) { k.e.aktif = false; k.vy = 0; k.dy = 0; }
+      if (k.e.aktif && k.t > CFG.kalasSure) { k.e.aktif = false; k.vy = 0; k.dy = 0; ses('kalas', k.x0); }
       if (!k.e.aktif) {
         k.vy += 1500 * dt; k.dy += k.vy * dt;
         // robot uzaklasinca yerine gelir (geri donulebilsin)
@@ -463,9 +474,11 @@
       let olur = true;
       if (e.kilit) for (const k of e.kilit) if (!k.yapildi) olur = false;
       if (e.gerek && tasinan !== e.gerek) olur = false;
-      if (!olur) { e.redT = 0; if (e.red) dusun(e.red); }
+      if (!olur) { e.redT = 0; if (e.red) dusun(e.red); ses('red'); }
       else {
         e.yapildi = true; e.t = 0; e.s = robot.etk ? robot.etk.s : 1;
+        ses(e.tip === 'dugme' ? 'dugme' : (e.tip === 'salter' ? 'salter' : (e.tip === 'kablo' ? 'fis' : 'hucre')));
+        if (e.kapi) ses('kapi'); else if (e.ac) ses('guc'); else if (e.hedef.length) ses('bariyer');
         if (e.gerek) tasinan = null;
         if (e.verir) tasinan = e.verir;
         for (const h of e.hedef) { h.kapali = true; if (!e.sure) h.kalici = true; }
@@ -474,7 +487,7 @@
         if (e.kapi) kapiAc = true;
         if (e.hat) dusun(B.hatlar.every((h) => h.yapildi) ? 'dHat2' : 'dHat1');
         else if (e.dusun) dusun(e.dusun);
-        else if (e.dokun) dusunSira('el', 'elSira');      // isi oyuncunun eli yaptirdi
+        else if (e.dokun) { dusunSira('el', 'elSira'); ses('el'); }      // isi oyuncunun eli yaptirdi
       }
       etkSecili = null;
     }
@@ -551,7 +564,7 @@
       // "elini uzat": oyuncu ekrana dokunup tuttukca robotun bos eli parmaga uzanir
       const tutuyor = isaret.bas || girdi.etk;
       if (tutuyor) F.temas += dt; else F.temas = Math.max(0, F.temas - dt * 0.7);
-      if (F.temas > 2.8) { F.faz = 5; F.t = 0; dsn = null; }
+      if (F.temas > 2.8) { F.faz = 5; F.t = 0; dsn = null; ses('buldum'); }
     } else {
       F.beyaz = smooth(F.t / 3.2);
     }
@@ -662,6 +675,7 @@
 
   function geriAl(neden) {
     if (durum !== 'oyun') return;
+    ses(neden === 'yakalandi' ? 'alarm' : (neden === 'hasar' ? 'hasar' : 'dustu'));
     durum = 'geri'; dZaman = 0; geriNeden = neden; robot._yerlesti = false; robot.kilit = true;
   }
 

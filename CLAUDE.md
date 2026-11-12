@@ -14,7 +14,7 @@ Oyun `www/` altinda; bagimliligi yok (saf Canvas 2D). Test: `www/index.html`.
 - Cizim kurali: duz ve parlak yuzey birakilmaz; her yeni gorselin ustunden `Sanat._eskit` (pas, toz, gren) gecilir.
   Gorseller `tuvalQ` ile yuksek cozunurlukte uretilir, `lw` / `lh` mantiksal olcusuyle basilir.
 - Oyun cevre etkilesimi + bulmaca agirliklidir; robotun aradigi insan oyuncudur (bkz. OYUN.md, bitis sahnesi).
-- Sesler ayri modulde: `www/js/audio.js` + `www/assets/sounds/` (yagmur ambiyansi, adim sesleri). Oyun koduna dokunmaz, `Robot.guncelle`yi sarar. Ses seviyeleri `SES.AYAR` icinde.
+- Sesler ayri modulde: `www/js/audio.js` + `www/assets/sounds/` (yagmur ambiyansi, adim sesleri). Oyun koduna dokunmaz, `Robot.guncelle`yi sarar. Ses seviyeleri `SES.AYAR` icinde. Olay sesleri `fx_*.mp3`, seviyeleri `SES.FX`; oyun `SES.cal(ad)` ile calar (bkz. OYUN.md).
 
 ## Dosyalar
 - `config.js` ayarlar + metinler, `util.js` yardimcilar, `level.js` zemin ve bolum,

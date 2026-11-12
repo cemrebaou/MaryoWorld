@@ -1,5 +1,5 @@
 // MaryoWorld - sesler (ayri modul). Oyun koduna dokunmaz: Robot.guncelle'yi sarar.
-// Dosyalar: assets/sounds/  rain.mp3 (ambiyans), step_1..10.mp3 (ayak basma)
+// Dosyalar: assets/sounds/  rain.mp3 (ambiyans), step_1..10.mp3 (ayak basma), fx_*.mp3 (olay sesleri)
 'use strict';
 const SES = (function () {
   const YOL = 'assets/sounds/';
@@ -9,6 +9,13 @@ const SES = (function () {
     inis: 1.0,        // zipladiktan sonra yere inis
   };
   const ADIMLAR = []; for (let i = 1; i <= 10; i++) ADIMLAR.push('step_' + i + '.mp3');
+  // Olay sesleri (fx_<ad>.mp3): earshot ses bankasindan uretildi. Oyun SES.cal('ad', siddet) ile calar.
+  // Buradaki sayi her sesin temel seviyesidir.
+  const FX = {
+    pres: 0.9, dugme: 0.7, salter: 0.8, fis: 0.7, hucre: 0.7, red: 0.5, alarm: 0.6, hasar: 0.8, dustu: 0.8,
+    kapi: 0.9, kalas: 0.7, bariyer: 0.35, guc: 0.6, sev: 0.5, el: 0.45, buldum: 0.8, basamak: 0.3, elektrik: 0.4, sandik: 0.5
+  };
+  const fxDosya = (ad) => 'fx_' + ad + '.mp3';
 
   let ctx = null, ana = null, tampon = {}, basladi = false, webAudio = false;
   let yagmurKaynak = null, htmlYagmur = null, sonAdim = -1;
@@ -36,6 +43,8 @@ const SES = (function () {
         webAudio = true;
         yagmurKaynak = dongu('rain.mp3', AYAR.yagmur);
       }).catch(htmlBaslat);
+      // olay sesleri ayri yuklenir: biri eksik olsa da digerleri calisir
+      Object.keys(FX).forEach((ad) => { yukle(fxDosya(ad)).catch(() => {}); });
     } else htmlBaslat();
   }
 
@@ -43,6 +52,22 @@ const SES = (function () {
   function htmlBaslat() {
     webAudio = false;
     htmlYagmur = new Audio(YOL + 'rain.mp3'); htmlYagmur.loop = true; htmlYagmur.volume = AYAR.yagmur; htmlYagmur.play().catch(() => {});
+  }
+
+  // olay sesi cal. siddet 0..1 (uzakliga gore kisilabilir), hiz = calma hizi (1 = normal)
+  function cal(ad, siddet, hiz) {
+    if (!basladi || FX[ad] === undefined) return;
+    const ses = Math.max(0, Math.min(1, FX[ad] * (siddet === undefined ? 1 : siddet)));
+    if (ses < 0.01) return;
+    const dosya = fxDosya(ad);
+    if (webAudio && tampon[dosya]) {
+      const k = ctx.createBufferSource(); k.buffer = tampon[dosya];
+      k.playbackRate.value = (hiz || 1) * (0.97 + Math.random() * 0.06);
+      const g = ctx.createGain(); g.gain.value = ses;
+      k.connect(g); g.connect(ana); k.start();
+    } else if (!webAudio) {
+      const a = new Audio(YOL + dosya); a.volume = ses; a.play().catch(() => {});
+    }
   }
 
   function adimCal(guc) {
@@ -67,6 +92,9 @@ const SES = (function () {
       if (basladi) {
         if (this.indiOlay > 250) adimCal(AYAR.inis * Math.min(1, this.indiOlay / 600));
         else if (this.bastiOlay) adimCal(AYAR.adim * (0.55 + this.bastiOlay.guc * 0.45));
+        // dik merdivende her basamakta tik
+        if (this.merd) { const b = Math.floor(this.y / 22); if (this._sesBas !== undefined && b !== this._sesBas) cal('basamak', 1); this._sesBas = b; }
+        else this._sesBas = undefined;
       }
       return r;
     };
@@ -82,5 +110,5 @@ const SES = (function () {
     if (htmlYagmur) { if (gizli) htmlYagmur.pause(); else htmlYagmur.play().catch(() => {}); }
   });
 
-  return { AYAR: AYAR, baslat: baslat };
+  return { AYAR: AYAR, FX: FX, baslat: baslat, cal: cal };
 })();
