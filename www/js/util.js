@@ -28,24 +28,55 @@ function tuvalYap(w, h) {
   const c = document.createElement('canvas');
   c.width = Math.max(1, Math.round(w));
   c.height = Math.max(1, Math.round(h));
+  c.lw = c.width; c.lh = c.height; c.q = 1;     // mantiksal olcu (cizimde bu kullanilir)
   return c;
 }
 
-// Kucult-buyut ile bulaniklastirma (ctx.filter her cihazda yok)
+// Keskin gorsel icin q kat buyuk tuval. Cizim kodu mantiksal olcude yazilir (baglam onceden olceklenir),
+// ekrana da mantiksal olcuyle (lw, lh) basilir: buyuk ekranda pikseller gorunmez.
+function tuvalQ(w, h, q) {
+  q = q || 2;
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w * q));
+  c.height = Math.max(1, Math.round(h * q));
+  c.lw = w; c.lh = h; c.q = q;
+  c.getContext('2d').scale(q, q);
+  return c;
+}
+
+// Bulaniklastirma. Gercek bulaniklik filtresi varsa onu kullanir; yoksa kademeli (2'ser) kucultup buyutur
+// (tek adimda buyutmek kenarlari basamak basamak gosteriyordu).
 function bulanik(kaynak, guc) {
-  const k = Math.max(2, guc);
-  const kw = Math.max(2, Math.round(kaynak.width / k));
-  const kh = Math.max(2, Math.round(kaynak.height / k));
-  const a = tuvalYap(kw, kh);
-  const ax = a.getContext('2d');
-  ax.imageSmoothingEnabled = true;
-  ax.imageSmoothingQuality = 'high';
-  ax.drawImage(kaynak, 0, 0, kw, kh);
   const b = tuvalYap(kaynak.width, kaynak.height);
   const bx = b.getContext('2d');
-  bx.imageSmoothingEnabled = true;
-  bx.imageSmoothingQuality = 'high';
-  bx.drawImage(a, 0, 0, b.width, b.height);
+  const r = Math.max(1, guc * (kaynak.q || 1));
+  if (typeof bx.filter === 'string') {
+    bx.filter = 'blur(' + r + 'px)';
+    bx.drawImage(kaynak, 0, 0);
+    bx.filter = 'none';
+  } else {
+    const adim = Math.max(1, Math.round(Math.log(r * 1.6) / Math.LN2));
+    const zincir = [kaynak];
+    for (let i = 0; i < adim; i++) {
+      const o = zincir[zincir.length - 1];
+      const k = tuvalYap(Math.max(2, o.width / 2), Math.max(2, o.height / 2));
+      const kx = k.getContext('2d');
+      kx.imageSmoothingEnabled = true; kx.imageSmoothingQuality = 'high';
+      kx.drawImage(o, 0, 0, k.width, k.height);
+      zincir.push(k);
+    }
+    let son = zincir[zincir.length - 1];
+    for (let i = zincir.length - 2; i >= 1; i--) {
+      const k = tuvalYap(zincir[i].width, zincir[i].height);
+      const kx = k.getContext('2d');
+      kx.imageSmoothingEnabled = true; kx.imageSmoothingQuality = 'high';
+      kx.drawImage(son, 0, 0, k.width, k.height);
+      son = k;
+    }
+    bx.imageSmoothingEnabled = true; bx.imageSmoothingQuality = 'high';
+    bx.drawImage(son, 0, 0, b.width, b.height);
+  }
+  b.lw = kaynak.lw || kaynak.width; b.lh = kaynak.lh || kaynak.height; b.q = kaynak.q || 1;
   b.kokX = kaynak.kokX; b.ustten = kaynak.ustten;
   return b;
 }

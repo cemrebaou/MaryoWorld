@@ -11,12 +11,16 @@ Oyun `www/` altinda; bagimliligi yok (saf Canvas 2D). Test: `www/index.html`.
   Force push yapilmaz, gecmis silinmez.
 - Oyun bilgileri (olculer, bolum yapisi, kurallar) `OYUN.md` icinde tutulur; degisince guncellenir.
 - Dokunmatik dugmeler PC'de de gorunur kalir.
+- Cizim kurali: duz ve parlak yuzey birakilmaz; her yeni gorselin ustunden `Sanat._eskit` (pas, toz, gren) gecilir.
+  Gorseller `tuvalQ` ile yuksek cozunurlukte uretilir, `lw` / `lh` mantiksal olcusuyle basilir.
+- Oyun cevre etkilesimi + bulmaca agirliklidir; robotun aradigi insan oyuncudur (bkz. OYUN.md, bitis sahnesi).
 - Sesler ayri modulde: `www/js/audio.js` + `www/assets/sounds/` (yagmur ambiyansi, adim sesleri). Oyun koduna dokunmaz, `Robot.guncelle`yi sarar. Ses seviyeleri `SES.AYAR` icinde.
 
 ## Dosyalar
 - `config.js` ayarlar + metinler, `util.js` yardimcilar, `level.js` zemin ve bolum,
-  `art.js` kodla uretilen gorseller, `robot.js` parcali karakter (ayak basma, egilme, tirmanma, el uzatma),
-  `game.js` dongu, kamera, katmanlar, isik, hava, tehditler, etkilesim, `audio.js` sesler.
+  `art.js` kodla uretilen gorseller, `robot.js` parcali karakter (ayak basma, egilme, surunme, tirmanma, itme, el uzatma),
+  `game.js` dongu, kamera, katmanlar, isik, hava, tehditler, bulmacalar, etkilesim, bitis sahnesi, `audio.js` sesler.
 - Yeni tehdit/etkilesim eklerken: `level.js` icindeki yardimcilar (pres, lazer, elektrik, dron, kule, etki, bariyer...)
-  kullanilir; kapatilabilen her tehdit `kapali` alanina bakar.
+  kullanilir; kapatilabilen her tehdit `kapali` alanina bakar. Bulmaca icin: `sandik`, `plaka`, `asansor`, `uyut`,
+  `etki` secenekleri (`ac`, `gerek`, `verir`, `kilit`, `onkosul`, `sure`).
 - `www/assets/` icine konan fotograflar kodla cizilenlerin yerine gecer (bkz. OYUN.md).

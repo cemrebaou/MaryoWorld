@@ -231,7 +231,7 @@ class Robot {
     this.P = RobotSanat.hepsi();
     this.minX = 40; this.maxX = zemin.uz - 60;
     this.merdivenler = [];   // dik merdivenler (oyun atar)
-    this.alcaklar = [];      // egilerek gecilen yerler
+    this.alcaklar = [];      // alcak gecitler: h >= 100 egilerek, h < 100 surunerek gecilir
     this.duvarlar = [];      // gecici duvarlar: [x0, x1, x0, x1, ...]
     this.sifirla(250);
   }
@@ -246,12 +246,17 @@ class Robot {
       { x: x + 11, y: this.z.yuk(x + 11), hav: false, t: 0, T: 0.2, sx: 0, sy: 0, tx: 0, ty: 0, kalk: 0, u: 0 },
       { x: x - 11, y: this.z.yuk(x - 11), hav: false, t: 0, T: 0.2, sx: 0, sy: 0, tx: 0, ty: 0, kalk: 0, u: 0 }
     ];
-    this.el = [{ x: x, y: y - 120 }, { x: x, y: y - 110 }];   // tirmanirken el konumlari
+    this.el = [{ x: x, y: y - 120 }, { x: x, y: y - 110 }];   // tirmanirken / surunurken el konumlari
+    this.elHedef = [null, null];    // disaridan verilen el hedefi (bitis sahnesi): {x, y}
     this.bacak = CFG.uyluk + CFG.baldir;
     this.kalcaY = y - CFG.bilek - this.bacak * 0.87;
     this.egik = 0.06; this.ezme = 0; this.cokme = 0; this.zaman = 0;
     this.salinim = 0; this.havaK = 0;
     this.egilK = 0;                 // 0 ayakta, 1 egik
+    this.surunK = 0;                // 0..1 surunme (dort ayak)
+    this.egilAcik = false;          // bas-cek egilme durumu
+    this.egilT = 0; this.egilOnce = false; this.egilYut = false;
+    this.itK = 0; this.itiyor = false;                       // sandik itme
     this.merd = null;               // tutunulan dik merdiven
     this.kayX = 0; this.tirmanBekle = 0; this.birakT = 0;
     this.etk = null; this.uzanK = 0; this.etkOlay = false;   // etkilesim (el uzatma)
@@ -264,18 +269,22 @@ class Robot {
   }
 
   // govdenin yerden yuksekligi (lazer, pres icin)
-  boyAl() { return lerp(CFG.boyAyakta, CFG.boyEgik, this.egilK); }
+  boyAl() { return lerp(lerp(CFG.boyAyakta, CFG.boyEgik, this.egilK), CFG.boySurun, this.surunK); }
 
-  // hareketli platform uzerinde tasinma
-  tasi(dx) {
-    this.x += dx;
-    for (let i = 0; i < 2; i++) { const a = this.ayak[i]; a.x += dx; a.sx += dx; a.tx += dx; }
+  // hareketli platform / asansor uzerinde tasinma
+  tasi(dx, dy) {
+    dy = dy || 0;
+    this.x += dx; this.y += dy; this.sonZeminY += dy; this.kalcaY += dy;
+    for (let i = 0; i < 2; i++) {
+      const a = this.ayak[i]; a.x += dx; a.sx += dx; a.tx += dx; a.y += dy; a.sy += dy; a.ty += dy;
+      this.el[i].x += dx; this.el[i].y += dy;
+    }
   }
 
   // etkilesim baslat: robot yerine gecer, doner ve elini tam (tx, ty) noktasina goturur
   etkBasla(tx, ty, egil) {
     if (this.etk || this.merd || !this.yerde) return false;
-    this.etk = { tx: tx, ty: ty, egil: egil, faz: 0, t: 0, s: sign(tx - this.x) || this.yon };
+    this.etk = { tx: tx, ty: ty, egil: egil, faz: 0, t: 0, s: sign(tx - this.x) || this.yon, sinir: 1.2 + Math.abs(tx - this.x) / 90 };
     return true;
   }
 
@@ -285,21 +294,22 @@ class Robot {
     this.bastiOlay = null; this.indiOlay = 0; this.etkOlay = false;
     this.tirmanBekle -= dt;
     this.kayX = damp(this.kayX, 0, 11, dt);
+    this.itK = damp(this.itK, this.itiyor ? 1 : 0, 12, dt); this.itiyor = false;
     if (this.merd) { this._tirman(dt, girdi); this._iskeletKur(); return; }
 
     let gx = this.kilit ? 0 : girdi.x;
-    let zipla = girdi.zipla, egil = !this.kilit && girdi.egil;
+    let zipla = girdi.zipla, eg = !this.kilit && girdi.egil;
     if (this.otoX !== null) { const fo = this.otoX - this.x; gx = Math.abs(fo) > 6 ? sign(fo) * 0.7 : 0; }
 
     // --- etkilesim: yerine gec, don, elini hedefe uzat, geri cek ---
     const E = this.etk;
     if (E) {
-      gx = 0; zipla = false; egil = E.egil;
+      gx = 0; zipla = false; eg = false;
       if (!this.yerde) { this.etk = null; this.uzanK = 0; }
       else if (E.faz === 0) {
         const fe = E.tx - E.s * (E.egil ? 46 : 30) - this.x;
         E.t += dt;
-        if (Math.abs(fe) > 4 && E.t < 1.6) gx = sign(fe) * 0.6; else { E.faz = 1; E.t = 0; }
+        if (Math.abs(fe) > 4 && E.t < E.sinir) gx = sign(fe) * (Math.abs(fe) > 70 ? 1 : 0.6); else { E.faz = 1; E.t = 0; }
       } else {
         this.yon = E.s; E.t += dt;
         if (E.faz === 1) { this.uzanK = smooth(E.t / 0.3); if (E.t >= 0.3) { E.faz = 2; E.t = 0; this.etkOlay = true; } }
@@ -311,23 +321,34 @@ class Robot {
     // --- dik merdivene tutunma: altta yukari tusu, ustte asagi tusu ---
     if (!E && this.yerde && !this.kilit && this.tirmanBekle <= 0) {
       for (const L of this.merdivenler) {
-        if (zipla && Math.abs(this.x - L.ax) < 30 && Math.abs(this.y - L.yAlt) < 10) { this._tutun(L, L.yAlt); break; }
-        if (egil && Math.abs(this.x - L.ux) < 32 && Math.abs(this.y - L.yUst) < 10) { this._tutun(L, L.yUst); break; }
+        const ara = (L.duvarX - this.x) * L.yon;
+        if (zipla && ara > 0 && ara < 96 && Math.abs(this.y - L.yAlt) < 10) { this._tutun(L, L.yAlt); break; }
+        if (eg && Math.abs(this.x - L.ux) < 32 && Math.abs(this.y - L.yUst) < 10) { this._tutun(L, L.yUst); break; }
       }
       if (this.merd) { this._tirman(dt, girdi); this._iskeletKur(); return; }
     }
 
-    // --- egilme ---
-    let alcakta = false;
-    for (const a of this.alcaklar) if (this.x > a.x0 - 16 && this.x < a.x1 + 16) alcakta = true;
-    this.egilK = damp(this.egilK, (alcakta || (egil && this.yerde)) ? 1 : 0, 13, dt);
+    // --- egilme tusu: kisa bas = egil / kalk (bas-cek), basili tut = surun ---
+    if (this.egilYut) { if (!girdi.egil) this.egilYut = false; eg = false; }
+    if (eg && !this.egilOnce) this.egilT = 0;
+    if (eg) this.egilT += dt;
+    else if (this.egilOnce) this.egilAcik = this.egilT < CFG.surunBekle ? !this.egilAcik : true;
+    this.egilOnce = eg;
+    let alcakta = false, darda = false;
+    for (const a of this.alcaklar) {
+      if (this.x > a.x0 - 16 && this.x < a.x1 + 16) { if (a.h < 100) darda = true; else alcakta = true; }
+    }
+    const surunIst = this.yerde && (darda || (eg && this.egilT >= CFG.surunBekle));
+    const egilIst = this.yerde && (surunIst || alcakta || this.egilAcik || eg || (E && E.egil));
+    this.egilK = damp(this.egilK, egilIst ? 1 : 0, 13, dt);
+    this.surunK = damp(this.surunK, surunIst ? 1 : 0, 9, dt);
 
     // --- yatay ---
-    let hedef = gx * CFG.yuruHiz * lerp(1, CFG.egilHiz, this.egilK);
+    let hedef = gx * CFG.yuruHiz * lerp(lerp(1, CFG.egilHiz, this.egilK), CFG.surunHiz, this.surunK);
     if (this.yerde && gx !== 0) {
       // yokus yukari biraz yavas, asagi biraz hizli
-      const eg = z.egim(this.x, 22);
-      hedef *= 1 + clamp(eg * sign(gx), -0.5, 0.4) * 0.45;
+      const egm = z.egim(this.x, 22);
+      hedef *= 1 + clamp(egm * sign(gx), -0.5, 0.4) * 0.45;
     }
     const iv = this.yerde ? (gx !== 0 ? CFG.ivme : CFG.surtunme) : (gx !== 0 ? CFG.havaIvme : CFG.havaIvme * 0.25);
     this.vx = yaklas(this.vx, hedef, iv * dt);
@@ -341,13 +362,12 @@ class Robot {
         if (this.y - gy > CFG.maxBasamak) { nx = this.x; this.vx = 0; }
       } else if (gy < CUKUR && this.y - gy > 3) { nx = this.x; this.vx = 0; }
     }
-    // alcak gecit: egilmeden girilmez
-    if (this.egilK < 0.7 || !this.yerde) {
-      for (const a of this.alcaklar) {
-        const s0 = a.x0 - 18, s1 = a.x1 + 18;
-        if (this.x <= s0 && nx > s0) { nx = s0; this.vx = 0; }
-        else if (this.x >= s1 && nx < s1) { nx = s1; this.vx = 0; }
-      }
+    // alcak gecit: yeterince egilmeden / surunmeden girilmez
+    for (const a of this.alcaklar) {
+      if (this.yerde && (a.h < 100 ? this.surunK > 0.7 : this.egilK > 0.7)) continue;
+      const s0 = a.x0 - 18, s1 = a.x1 + 18;
+      if (this.x <= s0 && nx > s0) { nx = s0; this.vx = 0; }
+      else if (this.x >= s1 && nx < s1) { nx = s1; this.vx = 0; }
     }
     // gecici duvarlar (inmis pres, lazer bariyeri)
     for (let i = 0; i < this.duvarlar.length; i += 2) {
@@ -373,11 +393,11 @@ class Robot {
       } else { this.y = gy; this.sonZeminY = gy; }
     }
     // ziplama (tampon + coyote)
-    if (zipla && !this.ziplaBasili) this.tampon = CFG.ziplaTampon;
+    if (zipla && !this.ziplaBasili) { this.tampon = CFG.ziplaTampon; this.egilAcik = false; }
     if (!zipla && this.ziplaBasili && this.vy < 0 && !this.yerde) this.vy *= CFG.ziplaKes;
     this.ziplaBasili = zipla;
     this.tampon -= dt; this.coyoteT -= dt;
-    if (alcakta || E) this.tampon = 0;
+    if (alcakta || darda || E) this.tampon = 0;
     if (this.tampon > 0 && !this.kilit && (this.yerde || this.coyoteT > 0)) {
       this.vy = -CFG.ziplaHiz; this.yerde = false; this.tampon = 0; this.coyoteT = 0;
     }
@@ -393,14 +413,14 @@ class Robot {
         for (let i = 0; i < 2; i++) {
           const a = this.ayak[i];
           let ay = z.yuk(a.x);
-          if (ay >= CUKUR || Math.abs(ay - gy) > 30) { a.x = this.x + this.yon * (i === 0 ? 10 : -10); ay = z.yuk(a.x); if (ay >= CUKUR) { a.x = this.x; ay = gy; } }
+          if (ay >= CUKUR || Math.abs(ay - gy) > 30) { a.x = this.x + this.yon * (i === 0 ? 10 : -10); ay = z.yuk(a.x); if (ay >= CUKUR || Math.abs(ay - gy) > 30) { a.x = this.x; ay = gy; } }
           a.y = ay; a.hav = false;
         }
       }
       if (gy >= CUKUR && this.y > this.sonZeminY + 300) this.olu = true;
     }
 
-    this._ayaklar(dt);
+    if (this.yerde && this.surunK > 0.5) this._surun(dt); else this._ayaklar(dt);
     this._govde(dt);
     this._iskeletKur();
   }
@@ -412,12 +432,9 @@ class Robot {
     this.x = L.ax; this.y = y;
     this.vx = 0; this.vy = 0; this.yerde = false; this.yon = L.yon;
     this.tampon = 0; this.ziplaBasili = true; this.birakT = 0;
+    this.egilAcik = false; this.egilOnce = false; this.egilYut = true;
     this.sonZeminY = y;
-    const K = this.iskelet;
-    for (let i = 0; i < 2; i++) {
-      this.ayak[i].hav = false; this.ayak[i].u = 0;
-      if (K) { this.el[i].x = K.kol[i].hx; this.el[i].y = K.kol[i].hy; }
-    }
+    for (let i = 0; i < 2; i++) { this.ayak[i].hav = false; this.ayak[i].u = 0; }
   }
 
   _tirman(dt, girdi) {
@@ -426,9 +443,10 @@ class Robot {
     if (!this.kilit) { if (girdi.zipla) v -= 1; if (girdi.egil) v += 1; }
     this.ziplaBasili = girdi.zipla; this.tampon = 0;
     this.egilK = damp(this.egilK, 0, 13, dt);
+    this.surunK = damp(this.surunK, 0, 9, dt);
     this.havaK = damp(this.havaK, 0, 12, dt);
     this.salinim = damp(this.salinim, 0, 14, dt);
-    this.egik = damp(this.egik, 0.15, 8, dt);
+    this.egik = damp(this.egik, 0.07, 8, dt);     // govde dik, kollar uzanmis: merdivenden uzak durur
     this.yon = L.yon; this.vx = 0; this.vy = 0;
 
     // duvardan uzaga basili tutulursa birak
@@ -475,9 +493,28 @@ class Robot {
       a.y = damp(a.y, L.yAlt - hs[i], 20, dt);
       const e = this.el[i];
       e.x = damp(e.x, L.lx - L.yon * 1, 20, dt);
-      e.y = damp(e.y, L.yAlt - Math.min(hs[1 - i] + R * 6 - 6, tavan + 40), 20, dt);
+      e.y = damp(e.y, L.yAlt - Math.min(hs[1 - i] + R * 6 - 14, tavan + 40), 20, dt);
     }
-    this.kalcaY = damp(this.kalcaY, this.y - CFG.bilek - B * 0.8, 20, dt);
+    this.kalcaY = damp(this.kalcaY, this.y - CFG.bilek - B * 0.72, 20, dt);
+  }
+
+  // ---- surunme: dort ayak, eller ve dizler yerde capraz sirayla ilerler ----
+  _surun(dt) {
+    const z = this.z, f = this.yon, P = 44;
+    const s = this.x * f;
+    const q = [Math.round((s - 28) / P) * P, Math.round((s - 50) / P) * P + 22];
+    this.havaK = damp(this.havaK, 0, 12, dt);
+    for (let i = 0; i < 2; i++) {
+      const a = this.ayak[i];
+      a.hav = false; a.u = 0;
+      const ax = q[i] * f;
+      let ay = z.yuk(ax); if (ay >= CUKUR || Math.abs(ay - this.y) > 40) ay = this.y;
+      a.x = damp(a.x, ax, 18, dt); a.y = damp(a.y, ay, 18, dt);
+      const e = this.el[i];
+      const ex = (q[1 - i] + 98) * f;
+      let ey = z.yuk(ex); if (ey >= CUKUR || Math.abs(ey - this.y) > 40) ey = this.y;
+      e.x = damp(e.x, ex, 18, dt); e.y = damp(e.y, ey - 4, 18, dt);
+    }
   }
 
   _ayaklar(dt) {
@@ -552,6 +589,8 @@ class Robot {
     if (this.yerde) {
       const ort = (this._zeminAlt(a0) + this._zeminAlt(a1)) / 2;
       hedef = ort - CFG.bilek - B * 0.87 - bob * 2.6 + nefes + this.ezme + this.cokme * 40 + this.egilK * CFG.egilCokme;
+      // surunurken kalca yere yakin, hafif salinir
+      hedef = lerp(hedef, ort - 38 + Math.sin(this.x * 0.143) * 1.6, this.surunK);
       this.kalcaY = damp(this.kalcaY, hedef, 17, dt);
     } else {
       hedef = this.y - CFG.bilek - B * 0.84;
@@ -569,13 +608,14 @@ class Robot {
         if (this.kalcaY < gerek) this.kalcaY = gerek;
       }
     }
-    // egilme: hiz + yokus + comelme
+    // egilme: hiz + yokus + comelme + itme
     let eh = 0.05 + (this.vx * this.yon / CFG.yuruHiz) * 0.11;
     if (this.yerde) {
       const eg = z.egim(this.x, 30);
       eh += clamp(-eg * this.yon, -0.45, 0.6) * 0.5;
     } else eh += clamp(-this.vy / 900, -0.12, 0.16);
-    eh += this.cokme * 0.85 + this.egilK * 0.7;
+    eh += this.cokme * 0.85 + this.egilK * 0.7 + this.itK * 0.3;
+    eh = lerp(eh, 1.36, this.surunK);             // surunurken govde yere paralel
     this.egik = damp(this.egik, eh, 8, dt);
     // kol salinimi: bacaklarin tersine
     const s = this.yerde ? clamp((a0.x - a1.x) / CFG.adim, -1, 1) * this.yon : 0;
@@ -590,11 +630,13 @@ class Robot {
   // eklem konumlarini hesapla (cizim ve isiklar icin)
   _iskeletKur() {
     const f = this.yon, z = this.z, E = this.etk;
+    const surun = this.yerde && !this.merd && this.surunK > 0.5;
     const hx = this.x + this.kayX - f * 2, hy = this.kalcaY;
     const sx = Math.sin(this.egik) * f, sy = -Math.cos(this.egik);
     const nx = hx + sx * CFG.govde, ny = hy + sy * CFG.govde;          // boyun
     const ox = hx + sx * (CFG.govde - 6), oy = hy + sy * (CFG.govde - 6); // omuz
-    const kafaEg = this.egik * 0.45 + this.cokme * 0.5 - this.egilK * 0.12 - (this.merd ? 0.22 : 0);
+    let kafaEg = this.egik * 0.45 + this.cokme * 0.5 - this.egilK * 0.12 - (this.merd ? 0.2 : 0);
+    kafaEg = lerp(kafaEg, 1.15, this.surunK);
     const kx = Math.sin(kafaEg) * f, ky = -Math.cos(kafaEg);
     const K = { f: f, hx: hx, hy: hy, nx: nx, ny: ny, sx: sx, sy: sy, kx: kx, ky: ky, bacak: [], kol: [] };
     for (let i = 0; i < 2; i++) {
@@ -602,6 +644,7 @@ class Robot {
       // ayak acisi: taban, bastigi parcanin egimine yatar (basamakta ve duzde tam duz)
       let eg = 0, yunus = 0;
       if (this.merd) yunus = 0.1;
+      else if (surun) yunus = 1.1;                 // parmak ucu yerde, topuk havada
       else if (this.yerde && !a.hav) {
         eg = clamp(z.egimYerel(a.x), -0.6, 0.6);
         // geride kalan ayakta topuk kalkar
@@ -622,12 +665,14 @@ class Robot {
       fi = lerp(fi, i === 0 ? -0.55 : 0.85, this.havaK * 0.8);
       fi = lerp(fi, 0.25, this.cokme);
       fi = lerp(fi, 0.5, this.egilK * 0.55);
-      const bukum = 0.28 + 0.4 * clamp(fi + 0.35, 0, 1) + this.havaK * 0.5 + this.egilK * 0.5;
+      fi = lerp(fi, 1.3 + i * 0.12, this.itK);                 // iterken iki kol one
+      const bukum = lerp(0.28 + 0.4 * clamp(fi + 0.35, 0, 1) + this.havaK * 0.5 + this.egilK * 0.5, 0.18, this.itK);
       let ex = ox + Math.sin(fi) * f * CFG.ustKol, ey = oy + Math.cos(fi) * CFG.ustKol;
       let elx = ex + Math.sin(fi + bukum) * f * CFG.onKol, ely = ey + Math.cos(fi + bukum) * CFG.onKol;
-      // el belirli bir noktaya gidecekse (basamak, dugme, fis) kol ters kinematikle cozulur
+      // el belirli bir noktaya gidecekse (basamak, zemin, dugme, fis, parmak) kol ters kinematikle cozulur
       let hdf = null, uc = 0;
-      if (this.merd) { hdf = this.el[i]; uc = 6; }
+      if (this.merd || surun) { hdf = this.el[i]; uc = 6; }
+      else if (this.elHedef[i]) { hdf = this.elHedef[i]; uc = 8; }
       else if (i === 0 && E && this.uzanK > 0) { hdf = { x: lerp(elx, E.tx, this.uzanK), y: lerp(ely, E.ty, this.uzanK) }; uc = 10; }
       if (hdf) {
         const kk = ikCoz(ox, oy, hdf.x, hdf.y, CFG.ustKol, CFG.onKol + uc, f);
@@ -635,6 +680,7 @@ class Robot {
         const ddx = kk.ex - ex, ddy = kk.ey - ey, dl = Math.sqrt(ddx * ddx + ddy * ddy) || 1;
         elx = ex + ddx / dl * CFG.onKol; ely = ey + ddy / dl * CFG.onKol;
       }
+      if (!this.merd && !surun) { this.el[i].x = elx; this.el[i].y = ely; }   // gecislerde el oldugu yerden baslasin
       K.kol.push({ ox: ox, oy: oy, ex: ex, ey: ey, hx: elx, hy: ely });
     }
     // goz ve cekirdek isigi konumlari

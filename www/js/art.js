@@ -35,6 +35,18 @@ const Sanat = {
     s.presKafa = this.presKafa(r);
     s.dron = this.dron();
     s.diken = this.diken(r);
+    s.kutular = {};
+    s.presCerceve = this.presCerceve(r);
+    s.bariyerCerceve = this.bariyerCerceve(r);
+    s.tabla150 = this.tabla(r, 150);
+    s.tabla110 = this.tabla(r, 110);
+    s.sandik = this.sandik(r);
+    s.boruDoku = this.boruDoku(r);
+    s.kalasDoku = this.kalasDoku(r);
+    s.hucre = this.hucre(r);
+    s.cihaz = this.cihaz(r);
+    s.kaide = this.kaide(r);
+    s.oda = null;      // bitis odasi: ilk gerektiginde uretilir (odaAl)
     s.agaclar = {};
     // arka plan parcalari (3 derinlik)
     s.binaUzak = []; s.binaOrta = []; s.yakinlar = [];
@@ -45,13 +57,23 @@ const Sanat = {
     s.cit = this.cit('#0a1318');
     // on plan (bulanik siluetler)
     s.on = [
-      bulanik(this.agacSil(rngYap(7), 760, '#020406', 13, false, 0.66), 7),
+      bulanik(this.agacSil(rngYap(7), 760, '#020406', 13, false, 0.66, 1), 7),
       bulanik(this.onDirek(), 6),
       bulanik(this.onCali(rngYap(9), 420, 150), 5),
       bulanik(this.onCali(rngYap(10), 300, 110), 5),
       bulanik(this.onKablo(rngYap(4)), 6)
     ];
     s.damla = this.damla();
+  },
+
+  // etkilesim kutusu (dugme, priz, salter, yuva): el yuksekligine gore direkli kutu
+  kutuAl(hh) {
+    if (!this.s.kutular[hh]) this.s.kutular[hh] = this.kutu(rngYap(500 + hh), hh);
+    return this.s.kutular[hh];
+  },
+  odaAl(w) {
+    if (!this.s.oda) this.s.oda = this.oda(rngYap(909), w);
+    return this.s.oda;
   },
 
   agacAl(tohum, boy) {
@@ -169,7 +191,7 @@ const Sanat = {
   // ---------- oyun duzlemi nesneleri ----------
   lamba(r) {
     const w = 130, h = 260;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h), x = c.getContext('2d');
     // direk
     const g = x.createLinearGradient(26, 0, 34, 0);
     g.addColorStop(0, '#3d464c'); g.addColorStop(0.4, '#68747b'); g.addColorStop(1, '#22282c');
@@ -191,7 +213,7 @@ const Sanat = {
 
   araba(r) {
     const w = 270, h = 96;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h), x = c.getContext('2d');
     const govde = new Path2D();
     govde.moveTo(8, 70); govde.lineTo(10, 50); govde.quadraticCurveTo(40, 40, 70, 38);
     govde.lineTo(98, 14); govde.quadraticCurveTo(140, 6, 182, 14); govde.lineTo(214, 40);
@@ -222,7 +244,7 @@ const Sanat = {
 
   kule(r) {
     const w = 120, h = 470;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h), x = c.getContext('2d');
     x.strokeStyle = '#2b3338'; x.lineWidth = 4; x.lineCap = 'round';
     const sol = (y) => 60 - (16 + (y / h) * 30), sag = (y) => 60 + (16 + (y / h) * 30);
     x.beginPath(); x.moveTo(sol(50), 50); x.lineTo(sol(h), h); x.moveTo(sag(50), 50); x.lineTo(sag(h), h); x.stroke();
@@ -250,7 +272,7 @@ const Sanat = {
   // beton siper (arkasina saklanilir)
   siper(r) {
     const w = 132, h = 124;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h), x = c.getContext('2d');
     const p = new Path2D();
     p.moveTo(4, h); p.lineTo(10, 26); p.lineTo(24, 12); p.lineTo(52, 15); p.lineTo(66, 6);
     p.lineTo(96, 12); p.lineTo(118, 10); p.lineTo(126, 40); p.lineTo(128, h); p.closePath();
@@ -281,7 +303,7 @@ const Sanat = {
   // Bolum sonu: yamaca gomulu beton cephe + yuvarlak kasa agzi. Disli kapak ayri cizilir (yuvarlanarak acilir)
   kapi(r) {
     const w = 580, h = 400;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h), x = c.getContext('2d');
     const cx = 340, cy = h - 132, R = 108;
     // beton cephe
     const p = new Path2D();
@@ -348,7 +370,7 @@ const Sanat = {
   // kasa agzini kapatan disli kapak (merkezden cizilir)
   kapiDisk(r) {
     const Rd = 120, b = (Rd + 12) * 2;
-    const c = tuvalYap(b, b), x = c.getContext('2d');
+    const c = tuvalQ(b, b), x = c.getContext('2d');
     x.translate(b / 2, b / 2);
     x.fillStyle = '#20262a';
     for (let i = 0; i < 18; i++) { x.save(); x.rotate(i / 18 * 6.2832); x.fillRect(-11, -Rd - 9, 22, 20); x.restore(); }
@@ -372,7 +394,7 @@ const Sanat = {
     for (let i = 0; i < 3; i++) { const a = i / 3 * 6.2832 + 0.4; x.beginPath(); x.moveTo(0, 0); x.lineTo(Math.cos(a) * Rd * 0.44, Math.sin(a) * Rd * 0.44); x.stroke(); }
     x.fillStyle = '#525d64'; x.beginPath(); x.arc(0, 0, 9, 0, 6.2832); x.fill();
     // pas ve yipranma
-    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.setTransform(c.q, 0, 0, c.q, 0, 0);
     x.globalCompositeOperation = 'source-atop';
     this._taneler(x, r, b, b, 70, ['rgba(96,54,30,0.28)', 'rgba(20,18,17,0.3)'], 2, 10);
     x.globalAlpha = 0.25; x.drawImage(this.s.gren, 0, 0, b, b);
@@ -384,7 +406,7 @@ const Sanat = {
   // pres kafasi (alt kenar = ezen yuzey)
   presKafa(r) {
     const w = 104, h = 86;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h), x = c.getContext('2d');
     const g = x.createLinearGradient(0, 0, w, 0);
     g.addColorStop(0, '#2a3035'); g.addColorStop(0.3, '#6a757c'); g.addColorStop(0.55, '#4a545a'); g.addColorStop(1, '#1a1e21');
     x.fillStyle = g; x.fillRect(4, 0, w - 8, h - 14);
@@ -411,7 +433,7 @@ const Sanat = {
   // devriye dronu (pervaneler oyunda cizilir). isikX/isikY = alttaki goz
   dron() {
     const w = 96, h = 40;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h), x = c.getContext('2d');
     x.strokeStyle = '#262e33'; x.lineWidth = 3.4; x.lineCap = 'round';
     x.beginPath(); x.moveTo(32, 20); x.lineTo(10, 13); x.moveTo(64, 20); x.lineTo(86, 13); x.stroke();
     x.fillStyle = '#151a1d'; x.fillRect(6, 8, 8, 9); x.fillRect(82, 8, 8, 9);
@@ -425,28 +447,311 @@ const Sanat = {
     return c;
   },
 
-  // molozdan cikan sivri insaat demirleri
-  diken(r) {
-    const w = 84, h = 36;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
-    x.fillStyle = '#2c3134';
-    x.beginPath(); x.moveTo(0, h); x.lineTo(4, h - 7); x.lineTo(18, h - 10); x.lineTo(34, h - 6); x.lineTo(52, h - 11);
-    x.lineTo(70, h - 7); x.lineTo(w - 3, h - 9); x.lineTo(w, h); x.closePath(); x.fill();
-    x.lineCap = 'round';
-    for (let i = 0; i < 10; i++) {
-      const px = 7 + i * 7.8 + r.ar(-2, 2), uz = r.ar(15, 27), eg = r.ar(-0.28, 0.28);
-      const ex = px + Math.sin(eg) * uz, ey = h - 6 - Math.cos(eg) * uz;
-      x.strokeStyle = '#4a352a'; x.lineWidth = 2.6;
-      x.beginPath(); x.moveTo(px, h - 5); x.lineTo(ex, ey); x.stroke();
-      x.strokeStyle = 'rgba(205,215,220,0.55)'; x.lineWidth = 1;
-      x.beginPath(); x.moveTo(lerp(px, ex, 0.72), lerp(h - 5, ey, 0.72)); x.lineTo(ex, ey); x.stroke();
+  // toz, pas, akinti: duz / parlak yuzey birakmamak icin her yeni gorselin ustunden gecilir
+  _eskit(x, r, w, h, guc) {
+    guc = guc || 1;
+    x.save(); x.globalCompositeOperation = 'source-atop';
+    this._taneler(x, r, w, h, Math.round(w * h / 300 * guc), ['rgba(96,54,30,0.30)', 'rgba(20,18,17,0.32)', 'rgba(150,150,140,0.10)'], 1.5, 7);
+    for (let i = 0; i < w / 14 * guc; i++) {
+      const px = r() * w, y0 = r() * h * 0.5, g = x.createLinearGradient(0, y0, 0, h);
+      g.addColorStop(0, 'rgba(14,16,18,' + r.ar(0.1, 0.3) + ')'); g.addColorStop(1, 'rgba(14,16,18,0)');
+      x.fillStyle = g; x.fillRect(px, y0, r.ar(1.5, 5), h * r.ar(0.3, 0.9));
     }
+    // ust yuzeylerde biriken toz
+    const th = Math.min(h, 14), gt = x.createLinearGradient(0, 0, 0, th);
+    gt.addColorStop(0, 'rgba(170,175,165,0.18)'); gt.addColorStop(1, 'rgba(170,175,165,0)');
+    x.fillStyle = gt; x.fillRect(0, 0, w, th);
+    x.globalAlpha = 0.28;
+    for (let yy = 0; yy < h; yy += 192) for (let xx = 0; xx < w; xx += 192) x.drawImage(this.s.gren, xx, yy);
+    x.restore();
+  },
+
+  // molozdan cikan sivri insaat demirleri + uyari levhasi (cimenle karismasin diye iri ve acik renk uclu)
+  diken(r) {
+    const w = 104, h = 74;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    // moloz yigini
+    x.fillStyle = x.createPattern(this.s.betonDoku, 'repeat');
+    x.beginPath(); x.moveTo(2, h); x.lineTo(8, h - 12); x.lineTo(22, h - 17); x.lineTo(38, h - 11); x.lineTo(54, h - 19);
+    x.lineTo(72, h - 13); x.lineTo(88, h - 16); x.lineTo(w - 4, h - 8); x.lineTo(w - 1, h); x.closePath(); x.fill();
+    x.fillStyle = 'rgba(0,0,0,0.35)'; x.fillRect(0, h - 6, w, 6);
+    x.strokeStyle = 'rgba(200,214,222,0.4)'; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(8, h - 12); x.lineTo(22, h - 17); x.lineTo(38, h - 11); x.lineTo(54, h - 19); x.lineTo(72, h - 13); x.lineTo(88, h - 16); x.stroke();
+    // demirler: kalin govde, pasli, ucta parlak sivri kesim
+    x.lineCap = 'round';
+    for (let i = 0; i < 9; i++) {
+      const px = 14 + i * 8.6 + r.ar(-2, 2), uz = r.ar(30, 46), eg = r.ar(-0.3, 0.3);
+      const ex = px + Math.sin(eg) * uz, ey = h - 12 - Math.cos(eg) * uz;
+      x.strokeStyle = '#17110e'; x.lineWidth = 5;
+      x.beginPath(); x.moveTo(px, h - 10); x.lineTo(ex, ey); x.stroke();
+      x.strokeStyle = '#7a4a30'; x.lineWidth = 3;
+      x.beginPath(); x.moveTo(px, h - 10); x.lineTo(ex, ey); x.stroke();
+      x.strokeStyle = 'rgba(232,238,240,0.9)'; x.lineWidth = 1.6;
+      x.beginPath(); x.moveTo(lerp(px, ex, 0.7), lerp(h - 10, ey, 0.7)); x.lineTo(ex, ey); x.stroke();
+    }
+    this._eskit(x, r, w, h, 0.5);
+    // uyari levhasi (egik direkte sari ucgen)
+    x.save(); x.translate(96, h - 6); x.rotate(0.1);
+    x.fillStyle = '#20262a'; x.fillRect(-1.5, -52, 3, 52);
+    x.fillStyle = '#c9a233'; x.beginPath(); x.moveTo(0, -70); x.lineTo(11, -50); x.lineTo(-11, -50); x.closePath(); x.fill();
+    x.fillStyle = '#14181a'; x.fillRect(-1.2, -63, 2.4, 7); x.fillRect(-1.2, -54.5, 2.4, 2.4);
+    x.restore();
+    c.kokX = 10; c.levhaX = 80; c.levhaY = -64;
+    return c;
+  },
+
+  // etkilesim kutusu: ustte kutu (elin gidecegi nokta kutunun ortasi), altta yere inen direk
+  kutu(r, hh) {
+    const w = 34, h = 20 + hh;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    let g = x.createLinearGradient(13, 0, 21, 0);
+    g.addColorStop(0, '#4b555b'); g.addColorStop(0.5, '#2a3035'); g.addColorStop(1, '#14181b');
+    x.fillStyle = g; x.fillRect(14, 30, 6, h - 30);
+    x.fillStyle = '#1a1f22'; x.fillRect(8, h - 5, 18, 5);
+    g = x.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, '#5b656c'); g.addColorStop(0.6, '#39424a'); g.addColorStop(1, '#232a2f');
+    x.fillStyle = g; x.fillRect(3, 0, 28, 40);
+    x.strokeStyle = 'rgba(10,12,14,0.7)'; x.lineWidth = 1; x.strokeRect(3.5, 0.5, 27, 39);
+    x.fillStyle = 'rgba(196,160,52,0.5)'; x.fillRect(3, 33, 28, 4);
+    x.fillStyle = '#12161a';
+    x.beginPath(); x.arc(7, 4, 1.5, 0, 6.2832); x.fill();
+    x.beginPath(); x.arc(27, 4, 1.5, 0, 6.2832); x.fill();
+    x.beginPath(); x.arc(17, 20, 9, 0, 6.2832); x.fill();
+    this._eskit(x, r, w, h, 1.2);
+    c.kokX = 17; c.elY = 20;
+    return c;
+  },
+
+  // pres cercevesi: iki kolon + ust kiris + silindir yuvasi (kokX = orta, alt kenar = zemin)
+  presCerceve(r) {
+    const w = 190, h = 356;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    for (let k = 0; k < 2; k++) {
+      const kx = k === 0 ? 8 : w - 26;
+      const g = x.createLinearGradient(kx, 0, kx + 18, 0);
+      g.addColorStop(0, '#4a545a'); g.addColorStop(0.45, '#2a3136'); g.addColorStop(1, '#14181b');
+      x.fillStyle = g; x.fillRect(kx, 6, 18, h - 6);
+      x.fillStyle = '#12161a';
+      for (let yy = 40; yy < h - 20; yy += 46) { x.beginPath(); x.arc(kx + 9, yy, 2.2, 0, 6.2832); x.fill(); }
+      // kolon dibinde uyari seritleri
+      x.save(); x.beginPath(); x.rect(kx, h - 44, 18, 30); x.clip();
+      x.fillStyle = 'rgba(196,160,52,0.55)';
+      for (let i = -30; i < 40; i += 14) { x.beginPath(); x.moveTo(kx + i, h - 14); x.lineTo(kx + i + 7, h - 14); x.lineTo(kx + i + 37, h - 44); x.lineTo(kx + i + 30, h - 44); x.closePath(); x.fill(); }
+      x.restore();
+    }
+    const g = x.createLinearGradient(0, 0, 0, 32);
+    g.addColorStop(0, '#59646b'); g.addColorStop(0.3, '#333b40'); g.addColorStop(1, '#171b1e');
+    x.fillStyle = g; x.fillRect(0, 0, w, 32);
+    x.fillStyle = '#101417'; x.fillRect(w / 2 - 22, 30, 44, 34);
+    x.fillStyle = '#0b0e10'; x.fillRect(w / 2 - 7, 8, 14, 9);
+    this._eskit(x, r, w, h, 0.9);
+    c.kokX = w / 2; c.lambaY = -(h - 12);
+    return c;
+  },
+
+  // lazer bariyeri govdesi: ters L direk + taban (isinlar oyunda cizilir)
+  bariyerCerceve(r) {
+    const w = 62, h = 250;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    let g = x.createLinearGradient(2, 0, 12, 0);
+    g.addColorStop(0, '#4a545a'); g.addColorStop(0.5, '#2a3136'); g.addColorStop(1, '#14181b');
+    x.fillStyle = g; x.fillRect(2, 8, 10, h - 8);
+    g = x.createLinearGradient(0, 0, 0, 14);
+    g.addColorStop(0, '#59646b'); g.addColorStop(1, '#1c2125');
+    x.fillStyle = g; x.fillRect(0, 0, w - 4, 13);
+    x.fillStyle = '#0d1012'; x.fillRect(16, 11, 36, 4);
+    x.fillStyle = '#1c2125'; x.fillRect(14, h - 6, 44, 6);
+    x.fillStyle = '#0d1012'; x.fillRect(18, h - 8, 36, 3);
+    this._eskit(x, r, w, h, 1.2);
+    c.kokX = 34;      // isinlarin ortasi
+    return c;
+  },
+
+  // izgarali metal tabla (hareketli platform, asansor)
+  tabla(r, w) {
+    const h = 16;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#5a656c'); g.addColorStop(0.25, '#343c41'); g.addColorStop(1, '#14181b');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.fillStyle = 'rgba(8,10,12,0.55)';
+    for (let i = 6; i < w - 4; i += 9) x.fillRect(i, 3, 4, 5);
+    x.fillStyle = 'rgba(196,160,52,0.5)'; x.fillRect(0, 11, 14, 3); x.fillRect(w - 14, 11, 14, 3);
+    this._eskit(x, r, w, h, 2);
+    return c;
+  },
+
+  // itilebilen sandik: celik koseli, ezik, tozlu
+  sandik(r) {
+    const w = 76, h = 72;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, w, h);
+    g.addColorStop(0, '#5d5548'); g.addColorStop(0.5, '#463f36'); g.addColorStop(1, '#2a2620');
+    x.fillStyle = g; x.fillRect(1, 1, w - 2, h - 2);
+    x.fillStyle = 'rgba(10,9,8,0.55)';
+    for (let i = 1; i < 5; i++) x.fillRect(1, i * 14.4, w - 2, 1.4);
+    x.strokeStyle = '#2b2620'; x.lineWidth = 7;
+    x.beginPath(); x.moveTo(7, 7); x.lineTo(w - 7, h - 7); x.stroke();
+    x.strokeStyle = '#353c40'; x.lineWidth = 6; x.strokeRect(3, 3, w - 6, h - 6);
+    x.fillStyle = '#4a545a';
+    [[1, 1], [w - 13, 1], [1, h - 13], [w - 13, h - 13]].forEach((k) => { x.fillRect(k[0], k[1], 12, 12); });
+    x.fillStyle = '#14181a';
+    [[7, 7], [w - 7, 7], [7, h - 7], [w - 7, h - 7]].forEach((k) => { x.beginPath(); x.arc(k[0], k[1], 2, 0, 6.2832); x.fill(); });
+    x.fillStyle = 'rgba(200,214,222,0.3)'; x.fillRect(1, 1, w - 2, 1.3);
+    this._eskit(x, r, w, h, 1.3);
+    return c;
+  },
+
+  // boru govdesi: yatayda yan yana dizilir
+  boruDoku(r) {
+    const w = 240, h = 66;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#5b666d'); g.addColorStop(0.22, '#3d464c'); g.addColorStop(0.7, '#1c2125'); g.addColorStop(1, '#0d1012');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.fillStyle = 'rgba(8,10,12,0.5)'; x.fillRect(118, 0, 2, h);
+    this._eskit(x, r, w, h, 1.1);
+    return c;
+  },
+
+  // curuk kalas: yatayda yan yana dizilir
+  kalasDoku(r) {
+    const w = 60, h = 10;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#4a4034'); g.addColorStop(1, '#221d18');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.fillStyle = 'rgba(0,0,0,0.5)'; x.fillRect(29, 0, 1.6, h);
+    x.strokeStyle = 'rgba(15,12,10,0.5)'; x.lineWidth = 0.7;
+    for (let i = 0; i < 6; i++) { const yy = r.ar(2, h - 2); x.beginPath(); x.moveTo(r.ar(0, 20), yy); x.lineTo(r.ar(30, w), yy + r.ar(-1, 1)); x.stroke(); }
+    this._eskit(x, r, w, h, 2.5);
+    return c;
+  },
+
+  // guc hucresi (kokX/kokY = merkez). Isigi oyunda eklenir
+  hucre(r) {
+    const w = 16, h = 30;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, '#59646b'); g.addColorStop(0.5, '#2f373c'); g.addColorStop(1, '#14181b');
+    x.fillStyle = g; x.fillRect(1, 0, w - 2, h);
+    x.fillStyle = '#12161a'; x.fillRect(0, 0, w, 5); x.fillRect(0, h - 5, w, 5);
+    x.fillStyle = '#ffb45a'; x.fillRect(5, 8, 6, 14);
+    this._eskit(x, r, w, h, 1.5);
+    x.fillStyle = 'rgba(255,200,120,0.9)'; x.fillRect(6.5, 9.5, 3, 11);
+    c.kokX = w / 2; c.kokY = h / 2;
+    return c;
+  },
+
+  // eldeki eski cihaz: icinde hala calisan bir ekran (goruntu oyunda cizilir)
+  cihaz(r) {
+    const w = 46, h = 34;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, '#4f595f'); g.addColorStop(1, '#1d2226');
+    x.fillStyle = g;
+    x.beginPath(); x.moveTo(4, 0); x.lineTo(w - 4, 0); x.lineTo(w, 4); x.lineTo(w, h - 4); x.lineTo(w - 4, h); x.lineTo(4, h); x.lineTo(0, h - 4); x.lineTo(0, 4); x.closePath(); x.fill();
+    x.fillStyle = '#12161a'; x.fillRect(w - 9, 7, 5, 5); x.fillRect(w - 9, 16, 5, 3);
+    this._eskit(x, r, w, h, 1.6);
+    x.fillStyle = '#05080a'; x.fillRect(4, 4, 30, 24);
+    c.kokX = w / 2; c.kokY = h / 2;
+    return c;
+  },
+
+  // cihazin durdugu beton kaide
+  kaide(r) {
+    const w = 78, h = 70;
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    x.fillStyle = x.createPattern(this.s.betonDoku, 'repeat');
+    x.beginPath(); x.moveTo(8, h); x.lineTo(12, 10); x.lineTo(2, 8); x.lineTo(2, 0); x.lineTo(w - 2, 0); x.lineTo(w - 2, 8); x.lineTo(w - 12, 10); x.lineTo(w - 8, h); x.closePath(); x.fill();
+    x.save(); x.globalCompositeOperation = 'source-atop';
+    const g = x.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, 'rgba(0,0,0,0.1)'); g.addColorStop(1, 'rgba(0,0,0,0.55)');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    x.restore();
+    this._eskit(x, r, w, h, 0.8);
+    c.kokX = w / 2;
+    return c;
+  },
+
+  // kasanin ici: eski bir siginak odasi. Raflar, sonmus ekranlar, duvarda insanlardan kalan izler
+  oda(r, w) {
+    const h = 660;
+    const c = tuvalYap(w, h), x = c.getContext('2d');
+    x.fillStyle = x.createPattern(this.s.betonDoku, 'repeat'); x.fillRect(0, 0, w, h);
+    let g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(2,4,6,0.86)'); g.addColorStop(0.55, 'rgba(2,4,6,0.58)'); g.addColorStop(1, 'rgba(2,4,6,0.74)');
+    x.fillStyle = g; x.fillRect(0, 0, w, h);
+    // panel derzleri
+    x.strokeStyle = 'rgba(0,0,0,0.5)'; x.lineWidth = 2;
+    for (let xx = 90; xx < w; xx += 210) { x.beginPath(); x.moveTo(xx, 0); x.lineTo(xx, h); x.stroke(); }
+    x.beginPath(); x.moveTo(0, h - 210); x.lineTo(w, h - 210); x.stroke();
+    // tavan borulari
+    for (let i = 0; i < 3; i++) {
+      const yy = 46 + i * 30;
+      g = x.createLinearGradient(0, yy, 0, yy + 14);
+      g.addColorStop(0, '#39434a'); g.addColorStop(1, '#0d1012');
+      x.fillStyle = g; x.fillRect(0, yy, w, 14);
+      x.fillStyle = '#1a2024';
+      for (let xx = 60 + i * 70; xx < w; xx += 330) x.fillRect(xx, yy - 3, 9, 20);
+    }
+    // raflar, sonmus ekranlar, sarkan kablolar
+    const orta = w * 0.52;
+    for (let i = 0; i < w / 300; i++) {
+      const px = 80 + i * 300 + r.ar(-50, 50), ry = h - r.ar(300, 360);
+      if (Math.abs(px + 85 - orta) < 330) continue;      // kaidenin arkasi duvar resmi icin bos kalir
+      x.fillStyle = '#12171a';
+      x.fillRect(px, ry, 170, 7); x.fillRect(px + 8, ry, 5, h - ry); x.fillRect(px + 157, ry, 5, h - ry); x.fillRect(px, ry + 110, 170, 6);
+      for (let k = 0; k < 2; k++) {
+        const ex = px + 14 + k * 78, ew = r.ar(52, 66), eh = r.ar(40, 50);
+        x.fillStyle = '#1b2125'; x.fillRect(ex, ry - eh - 2, ew, eh);
+        x.fillStyle = '#06090b'; x.fillRect(ex + 5, ry - eh + 3, ew - 10, eh - 12);
+        x.fillStyle = 'rgba(120,160,180,0.07)';
+        x.beginPath(); x.moveTo(ex + 7, ry - eh + 5); x.lineTo(ex + ew * 0.5, ry - eh + 5); x.lineTo(ex + 7, ry - 14); x.closePath(); x.fill();
+      }
+      x.strokeStyle = '#0b0e10'; x.lineWidth = 2;
+      x.beginPath(); x.moveTo(px + 40, ry + 7); x.bezierCurveTo(px + 30, ry + 60, px + 70, ry + 70, px + 60, ry + 110); x.stroke();
+      x.fillStyle = '#161b1e'; x.fillRect(px + 20, ry + 82, 44, 28); x.fillRect(px + 96, ry + 74, 56, 36);
+    }
+    // duvarda tebesirle cizilmis resim: bir insan ile bir robot el ele (kaidenin arkasinda)
+    const tx = orta + 150, ty = h - 250;
+    x.strokeStyle = 'rgba(215,225,228,0.34)'; x.lineWidth = 2.6; x.lineCap = 'round'; x.lineJoin = 'round';
+    x.beginPath();
+    x.moveTo(tx + 11, ty); x.arc(tx, ty, 11, 0, 6.2832);                 // insan
+    x.moveTo(tx, ty + 11); x.lineTo(tx + 1, ty + 52);
+    x.lineTo(tx - 13, ty + 86); x.moveTo(tx + 1, ty + 52); x.lineTo(tx + 15, ty + 86);
+    x.moveTo(tx, ty + 24); x.lineTo(tx - 20, ty + 44);
+    x.moveTo(tx, ty + 24); x.lineTo(tx + 34, ty + 36);                    // uzanan el
+    x.rect(tx + 58, ty - 14, 26, 22);                                    // robot: kare kafa
+    x.moveTo(tx + 71, ty - 14); x.lineTo(tx + 76, ty - 26);
+    x.rect(tx + 54, ty + 12, 34, 40);
+    x.moveTo(tx + 62, ty + 52); x.lineTo(tx + 60, ty + 86); x.moveTo(tx + 80, ty + 52); x.lineTo(tx + 83, ty + 86);
+    x.moveTo(tx + 54, ty + 24); x.lineTo(tx + 34, ty + 36);              // eller birlesir
+    x.moveTo(tx + 88, ty + 24); x.lineTo(tx + 104, ty + 44);
+    x.stroke();
+    x.fillStyle = 'rgba(215,225,228,0.34)';
+    x.beginPath(); x.arc(tx + 66, ty - 4, 2, 0, 6.2832); x.fill();
+    x.beginPath(); x.arc(tx + 77, ty - 4, 2, 0, 6.2832); x.fill();
+    // gun sayan cizikler
+    x.strokeStyle = 'rgba(215,225,228,0.22)'; x.lineWidth = 1.8;
+    for (let gr = 0; gr < 7; gr++) {
+      const gx0 = orta - 330 + gr * 46, gy0 = h - 300 + (gr % 2) * 44;
+      x.beginPath();
+      for (let k = 0; k < 4; k++) { x.moveTo(gx0 + k * 7, gy0); x.lineTo(gx0 + k * 7 + r.ar(-1, 1), gy0 + 26); }
+      x.moveTo(gx0 - 4, gy0 + 20); x.lineTo(gx0 + 26, gy0 + 5);
+      x.stroke();
+    }
+    // genel toz / kir
+    x.globalAlpha = 0.2;
+    for (let yy = 0; yy < h; yy += 192) for (let xx = 0; xx < w; xx += 192) x.drawImage(this.s.gren, xx, yy);
+    x.globalAlpha = 1;
+    c.kokX = 0;
     return c;
   },
 
   // ---------- siluetler ----------
   bina(r, w, h, renk, delik) {
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h, 1.5), x = c.getContext('2d');
     x.fillStyle = renk;
     x.beginPath(); x.moveTo(0, h);
     let px = 0, py = r.ar(0, h * 0.25);
@@ -471,9 +776,9 @@ const Sanat = {
     return c;
   },
 
-  agacSil(r, boy, renk, kalin, isikli, govdeOran) {
+  agacSil(r, boy, renk, kalin, isikli, govdeOran, q) {
     const w = boy * 0.95, h = boy;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h, q || 1.5), x = c.getContext('2d');
     x.strokeStyle = renk; x.lineCap = 'round';
     const dal = (px, py, ac, uz, k, d) => {
       const ex = px + Math.cos(ac) * uz, ey = py + Math.sin(ac) * uz;
@@ -494,7 +799,7 @@ const Sanat = {
   },
 
   direk(renk) {
-    const c = tuvalYap(90, 330), x = c.getContext('2d');
+    const c = tuvalQ(90, 330, 1.5), x = c.getContext('2d');
     x.fillStyle = renk; x.fillRect(42, 14, 6, 316);
     x.fillRect(12, 26, 66, 4); x.fillRect(22, 44, 46, 3);
     x.fillRect(12, 18, 3, 10); x.fillRect(75, 18, 3, 10); x.fillRect(43, 4, 3, 12);
@@ -504,7 +809,7 @@ const Sanat = {
 
   cit(renk) {
     const w = 300, h = 90;
-    const c = tuvalYap(w, h), x = c.getContext('2d');
+    const c = tuvalQ(w, h, 1.5), x = c.getContext('2d');
     x.strokeStyle = renk; x.fillStyle = renk;
     for (let i = 0; i < 4; i++) { x.save(); x.translate(20 + i * 86, h); x.rotate((i % 2 ? 0.05 : -0.04)); x.fillRect(-2.5, -h + 6, 5, h); x.restore(); }
     x.lineWidth = 1.2;
