@@ -10,7 +10,7 @@ Oyun `www/` altinda; bagimliligi yok (saf Canvas 2D). Test: `www/index.html`.
 - Repoda sadece son 2 surum (commit) tutulur: yeni surum gonderilirken en eskisi silinir.
 - Oyun bilgileri (olculer, bolum yapisi, kurallar) `OYUN.md` icinde tutulur; degisince guncellenir.
 - Dokunmatik dugmeler PC'de de gorunur kalir.
-- Sesler simdilik yok (kullanici sonra ekleyecek).
+- Sesler ayri modulde: `www/js/audio.js` + `www/assets/sounds/` (yagmur ambiyansi, robot hareket dongusu, adim sesleri). Oyun koduna dokunmaz, `Robot.guncelle`yi sarar. Ses seviyeleri `SES.AYAR` icinde.
 
 ## Dosyalar
 - `config.js` ayarlar + metinler, `util.js` yardimcilar, `level.js` zemin ve bolum,
