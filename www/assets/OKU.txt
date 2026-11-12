@@ -1,0 +1,1 @@
+Buraya konan bg_far.jpg ve zemin.jpg oyunda otomatik kullanilir (bkz. OYUN.md).

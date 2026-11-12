@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Maryo World</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+  body { display: flex; align-items: center; justify-content: center;
+         -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; touch-action: none; }
+  #oyun { display: block; background: #000; touch-action: none; }
+  .dugme { position: fixed; width: 13vmin; height: 13vmin; min-width: 54px; min-height: 54px;
+           border-radius: 50%; border: 1.5px solid rgba(200, 222, 232, 0.28);
+           background: rgba(120, 150, 165, 0.07); touch-action: none;
+           display: flex; align-items: center; justify-content: center; }
+  .dugme.bas { background: rgba(160, 200, 220, 0.22); border-color: rgba(220, 238, 246, 0.6); }
+  .dugme svg { width: 42%; height: 42%; fill: none; stroke: rgba(210, 230, 240, 0.55); stroke-width: 2.4;
+               stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+  #dSol { left: calc(3vmin + env(safe-area-inset-left)); bottom: 5vmin; }
+  #dSag { left: calc(19vmin + env(safe-area-inset-left)); bottom: 5vmin; }
+  #dZip { right: calc(4vmin + env(safe-area-inset-right)); bottom: 5vmin; }
+</style>
+</head>
+<body>
+<canvas id="oyun"></canvas>
+<div class="dugme" id="dSol"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></div>
+<div class="dugme" id="dSag"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></div>
+<div class="dugme" id="dZip"><svg viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></div>
+<script src="js/config.js"></script>
+<script src="js/util.js"></script>
+<script src="js/art.js"></script>
+<script src="js/level.js"></script>
+<script src="js/robot.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>
