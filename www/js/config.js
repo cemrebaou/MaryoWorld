@@ -1,7 +1,7 @@
 // Son Sinyal - ayarlar. Her degisiklikte surum artirilir.
 'use strict';
 const CFG = {
-  surum: 'v0.21',
+  surum: 'v0.22',
   oyunAdi: 'SON SİNYAL',
 
   // Ekran (mantiksal cozunurluk; yukseklik sabit, genislik orana gore)

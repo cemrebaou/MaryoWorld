@@ -1,4 +1,4 @@
-# Son Sinyal - oyun notlari (v0.21)
+# Son Sinyal - oyun notlari (v0.22)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -277,3 +277,4 @@ Oyun kodu `game.js` sonundaki `ek2*` fonksiyonlarinda (`ek2Guncelle`, `ek2Once2`
 ## Yukleme ekrani (v0.19)
 - `www/assets/giris.jpg` (kullanicinin gorseli) yukleme cubugu olarak calisir: ekran siyah = %0, gorsel soldan saga acildikca yuzde artar (sag altta `%NN`). Gorsel ustten sabit, ekrana gore alttan (gerekirse yanlardan) kesilir (`cover`, `center top`).
 - Gercek ilerleme: `Sanat.hazirlaAdim()` uretec; her `yield` bir adim, kare basina ~14 ms calisir. En az ~1.6 sn'de dolar, %100'de 0.7 sn bekler, 0.8 sn'de kararip oyuna gecer.
+- Google Play magaza metinleri (7 dil, kisa + tam aciklama): `MAGAZA.md`.
