@@ -23,7 +23,8 @@ Oyun `www/` altinda; bagimliligi yok (saf Canvas 2D). Test: `www/index.html`.
 - Yeni tehdit/etkilesim eklerken: `level.js` icindeki yardimcilar (pres, lazer, elektrik, dron, kule, etki, bariyer...)
   kullanilir; kapatilabilen her tehdit `kapali` alanina bakar. Bulmaca icin: `sandik`, `plaka`, `asansor`, `uyut`,
   `etki` secenekleri (`ac`, `gerek`, `verir`, `kilit`, `onkosul`, `sure`).
-- Bolumler: `level.js` icinde `kurucu()` ortak yardimcilar, `bolum1()` .. `bolum5()`, `bolumKur(no)`. Her bolumun kendi yetenegi,
+- Bolumler: `level.js` icinde `kurucu()` ortak yardimcilar, `bolum1()` .. `bolum10()`, `bolumKur(no)`. Her bolumun kendi yetenegi,
   dusmani ve tekrar etmeyen bulmacalari var (bkz. OYUN.md). 3-5. bolumun oyun kodu `game.js` sonundaki `ek*` fonksiyonlarinda
-  (`ekGuncelle`, `ekCiz`, `ekIsik`, `ekMaske`, `kancaGuncelle`); gorselleri `art.js` `_parca` ile uretilir.
+  (`ekGuncelle`, `ekCiz`, `ekIsik`, `ekMaske`, `kancaGuncelle`), 6-10. bolumunki `ek2*` fonksiyonlarinda; gorselleri `art.js` `_parca` ile uretilir.
+  Kol / bacak gibi uzuvlar duz cizgiyle degil `uzuv(...)` dokulu parcasiyla cizilir.
 - `www/assets/` icine konan fotograflar kodla cizilenlerin yerine gecer (bkz. OYUN.md).

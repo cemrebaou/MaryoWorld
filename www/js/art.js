@@ -55,7 +55,7 @@ const Sanat = {
     s.omuz = this.omuz(r);
     s.sigorta = this.sigorta(r);
     const r2 = rngYap(31337);      // sonradan eklenenler: ayri tohum (eski gorsellerin dokusu degismesin)
-    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan', 'uzuv', 'hover', 'kafes']) s[ad] = this[ad](r2);
+    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan', 'uzuv', 'hover', 'kafes', 'mayin', 'bekci', 'testere', 'kus']) s[ad] = this[ad](r2);
     s.oda = null;      // bitis odasi: ilk gerektiginde uretilir (odaAl)
     s.agaclar = {};
     // arka plan parcalari (3 derinlik)
@@ -1004,6 +1004,43 @@ const Sanat = {
     });
     c.kokX = 26;
     return c;
+  },
+  // ---- bolum 6-10 ----
+  mayin(r) {
+    return this._parca(r, 38, 38, '#555f66', '#1b2125', (x, f) => {
+      if (!f) {
+        x.beginPath(); x.arc(19, 19, 12, 0, 6.283); x.fill();
+        for (let i = 0; i < 8; i++) { const a = i * 0.785; x.beginPath(); x.moveTo(19 + Math.cos(a - 0.2) * 11, 19 + Math.sin(a - 0.2) * 11); x.lineTo(19 + Math.cos(a) * 19, 19 + Math.sin(a) * 19); x.lineTo(19 + Math.cos(a + 0.2) * 11, 19 + Math.sin(a + 0.2) * 11); x.fill(); }
+        x.fillStyle = '#0d1012'; x.beginPath(); x.arc(19, 19, 5, 0, 6.283); x.fill();
+      }
+    });
+  },
+  // bekci: genis omuzlu agir govde (bacak ve kollari oyunda uzuv parcalariyla cizilir)
+  bekci(r) {
+    return this._parca(r, 72, 132, '#59636a', '#1c2226', (x, f) => {
+      if (!f) {
+        x.beginPath(); x.moveTo(4, 26); x.lineTo(18, 12); x.lineTo(54, 12); x.lineTo(68, 26); x.lineTo(62, 96); x.lineTo(50, 124); x.lineTo(22, 124); x.lineTo(10, 96); x.closePath(); x.fill();
+        x.fillRect(26, 0, 20, 16);
+        x.fillStyle = '#0d1012'; x.fillRect(20, 40, 32, 4); x.fillRect(20, 52, 32, 4); x.fillRect(28, 4, 16, 5);
+      }
+    });
+  },
+  testere(r) {
+    return this._parca(r, 60, 60, '#8a959c', '#3a444a', (x, f) => {
+      if (!f) {
+        x.beginPath();
+        for (let i = 0; i < 18; i++) { const a = i * 0.349; x.lineTo(30 + Math.cos(a) * 29, 30 + Math.sin(a) * 29); x.lineTo(30 + Math.cos(a + 0.22) * 22, 30 + Math.sin(a + 0.22) * 22); }
+        x.closePath(); x.fill();
+        x.fillStyle = '#12161a'; x.beginPath(); x.arc(30, 30, 7, 0, 6.283); x.fill(); x.fillRect(12, 28.5, 12, 3);
+      }
+    });
+  },
+  // yardimci dron
+  kus(r) {
+    return this._parca(r, 30, 18, '#6a757c', '#252c31', (x, f) => {
+      if (!f) { x.beginPath(); x.ellipse(15, 11, 9, 6, 0, 0, 6.283); x.fill(); x.fillRect(1, 3, 28, 2.4); x.fillRect(13.5, 4, 3, 4); }
+      else { x.fillStyle = '#96ffbe'; x.fillRect(19, 9.5, 3, 2.4); }
+    });
   },
   // uzuv parcasi: bacak / kol kemigi (iki ucu mafsalli); oyunda dondurulup uzatilarak basilir
   uzuv(r) {

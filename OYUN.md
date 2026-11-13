@@ -1,4 +1,4 @@
-# MaryoWorld - oyun notlari (v0.13)
+# MaryoWorld - oyun notlari (v0.14)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -164,12 +164,12 @@ Oyun `SES.cal(ad, siddet)` ile calar (game.js `ses()` uzakliga gore kisar).
 | el / sev / buldum | dokunma cumlesi, gizli oksama, bitis | hover_tick/ping, shimmer/m1, logo_sting/reverse_bloom |
 
 ## Bolum sistemi (v0.10)
-- 5 bolum (`BOLUM_SAYI` = `BOLUM_HAZIR` = 5). `level.js`: `kurucu()` ortak yardimcilari verir,
-  her bolum kendi fonksiyonu (`bolum1` .. `bolum5`), `bolumKur(no)` secer.
+- 10 bolum (`BOLUM_SAYI` = `BOLUM_HAZIR` = 10). `level.js`: `kurucu()` ortak yardimcilari verir,
+  her bolum kendi fonksiyonu (`bolum1` .. `bolum10`), `bolumKur(no)` secer.
 - `game.js` `bolumYukle(no)`: bolumu kurar, robotu basa koyar, yetenekleri sifirlar. Bolum sonu kapisi: odasi varsa (`B.oda`) bitis
-  sahnesine, yoksa sonraki bolume gecer. Bitis odasi 5. bolumun sonunda.
-- Ustte ortada 1-5 dugmeleri (`#bolumler`): dokununca o bolum aninda acilir (onceki bolumlerin yetenekleri hazir gelir).
-- Yasam sinyali yuzdesi 5 bolume yayilir: `(bolumNo - 1 + bolumdeki ilerleme) / 5`.
+  sahnesine, yoksa sonraki bolume gecer. Bitis odasi 10. bolumun sonunda.
+- Ustte ortada 1-10 dugmeleri (`#bolumler`): dokununca o bolum aninda acilir (onceki bolumlerin yetenekleri hazir gelir).
+- Yasam sinyali yuzdesi 10 bolume yayilir: `(bolumNo - 1 + bolumdeki ilerleme) / 10`.
 - Her bolumun kendi yetenegi var; bolumun basindaki kaideden alinir, sonraki bolumlerde de kalir (`yet`).
   1: egil / surun / tirman / it. 2: omuz lazeri. 3: kanca. 4: sirt iticisi. 5: kalkan.
 
@@ -249,3 +249,20 @@ Oyun `SES.cal(ad, siddet)` ile calar (game.js `ses()` uzakliga gore kisar).
 - Sel onden yayilir; duvara dayaninca su yukselir (`tavan`), merdivenle ya da ustteki halkayla son anda cikilir.
 - Kafesli sigortanin altinda siper (`kafes`) var: dogrudan lazer sipere carpar, yalnizca aynadan gelen isin vurur.
 - Kalkan keskin yay degil, yumusak isik. Tasiyicinin ustunde surunurken yerinde adim atmaz (`robot.tasiX`). Lazer sesi yenilendi.
+
+## Bolum 6-10 (v0.14)
+Oyun kodu `game.js` sonundaki `ek2*` fonksiyonlarinda (`ek2Guncelle`, `ek2Once2`, `ek2Ciz`, `ek2Isik`, `ek2Maske`).
+- **6 HURDALIK** (dis mekan) - MIKNATIS (`yet.miknatis`): sandiga dokun = robota dogru kayar (790 px menzil, bariyerden gecer, plakaya agirlik olur);
+  miknatisli platform (`mplat(w, pw, sagda)`) dokununca robotun yanina, `capa`ya dokununca capanin yanina gider.
+  Mayin (`mayin(x, yuk)`): 380 px icindeki robota dogru suzulur, degince patlar; lazerle ya da ustune sandik cekilerek patlatilir (zincirleme).
+- **7 SERA** (dis mekan, firtina) - YEM (`yet.yem`): egilip etkilesim = 6 sn hologram (9 sn bekleme). `bekci` gecidi kapatir, yalnizca yeme gider,
+  orada 6 sn bekleyip doner; siperde egilen robotu gormez. Zirhli dortayak ve taret de yeme yonelir. Plakaya birakilan yem bekciyi agirlik yapar.
+- **8 ARSIV** (ic mekan, mavi) - KUS (`yet.kus`): `uzak` isaretli dugme / saltere ya da bir plakaya dokun; yardimci dron gidip basar ya da plakaya konar
+  (820 px menzil). `testere(x0, x1, periyot, faz)`: rayda gidip gelen testere, ustunden atlanir; dugmeyle durur.
+- **9 SAAT KULESI** (ic mekan, kehribar) - AGIR CEKIM (`yet.agir`): ayakta etkilesim = 3.2 sn dunya %30 hizda (`zk`, `dtW`), robot normal; 8 sn bekleme.
+  Cok hizli presler, testereler, buhar duvarlari (`oran`), igne dronlar (`ari.hiz = 330`), hizli kilitlenen taret (`taret.sure`).
+- **10 KALP** (ic mekan, kizil) - ASIRI YUK: `etki('hucre', ..., { verir: 'sarj' })` istasyonu 8 sn yukler (`sarjT`). Yukluyken elektrikli zemin yakmaz,
+  dokunan golge yanar, `gerek: 'sarj'` panelleri calisir, `kopru.sarj` isik kopruleri vardir. `nabiz.yukSiler` yuku siler.
+  Sonda cokus kovalamacasi (`kovala.cokus`), uc yuklu panelli kapi ve bitis odasi.
+- Yeni uzunluklar: 6: 43600, 7: 42360, 8: 42700, 9: 42300, 10: 46840 px.
+
