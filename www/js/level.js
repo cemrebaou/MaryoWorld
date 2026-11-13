@@ -143,6 +143,8 @@ function kurucu() {
     alcaklar: [], ipuclari: [], temiz: [], etkiler: [], bariyerler: [], yapilar: [],
     sandiklar: [], plakalar: [], asansorler: [], dusunceler: [], hatlar: [],
     lambalar: [], dusmanlar: [], paletliler: [], nisanlar: [], asililar: [], kopruler: [],
+    halkalar: [], suruler: [], buharlar: [], sallar: [], kovalar: [], fanlar: [], arilar: [], aynalar: [], taretler: [],
+    dalgalar: [], nabizlar: [],
     tema: { ic: false }, oda: null, oyunSonX: 0
   };
 
@@ -290,7 +292,60 @@ function kurucu() {
     cukur(w);
     return k;
   };
-  // bitis odasi (kasanin en ici): son hazir bolumun sonuna eklenir
+  // ---- bolum 3 ve sonrasi ----
+  // kanca halkasi: h = zeminden yukseklik (asilan robotun ayaklari halkanin 188 px altinda kalir)
+  const halka = (x, h) => { const o = { x: x, y: z.y - h }; B.halkalar.push(o); temiz(x - 250, x + 250); return o; };
+  // halkali bosluk: ustunde halkalar dizili genis cukur; son halka karsi yakanin ustundedir
+  const halkali = (w, h) => {
+    const x0 = z.x, n = Math.ceil(w / 250);
+    for (let i = 0; i < n; i++) halka(x0 + w * (i + 0.5) / n, h || 330);
+    halka(x0 + w + 46, h || 330);
+    cukur(w);
+    return x0;
+  };
+  // fare surusu: yuva (boru agzi) x'inden cikar; robot x0..x1 arasinda zemindeyken kovalar. tikanir = onune sandik itilince cikamaz
+  const suru = (yuva, x0, x1) => {
+    const s = { tip: 'suru', yuva: yuva, x: yuva, y: z.y, x0: x0, x1: x1, min: Math.min(yuva, x0), max: Math.max(yuva, x1),
+                durum: 0, t: 0, kapali: false, kapali0: false };
+    B.suruler.push(s); temiz(yuva - 200, yuva + 200);
+    return s;
+  };
+  // buhar: periyodik fiskirir (periyot 0 = hep acik; dugme / vana ile kesilir)
+  const buhar = (x, periyot, faz) => { const b = { x: x, y: z.y, periyot: periyot, faz: faz || 0, acik: false, kapali: false, kapali0: false }; B.buharlar.push(b); return b; };
+  // sal: su dolu cukurda, pistonlu bir samandira. dAlt / dUst = alcak ve yuksek konumu (z.y'ye gore); kol ile degisir
+  const sal = (w, dAlt, dUst, yuksek) => {
+    const e = { x0: z.x, x1: z.x + w, y: z.y + (yuksek ? dUst : dAlt), aktif: true };
+    z.ekler.push(e);
+    const s = { e: e, x0: z.x, x1: z.x + w, yAlt: z.y + dAlt, yUst: z.y + dUst, k: yuksek ? 1 : 0, kapali: !yuksek, kapali0: !yuksek };
+    B.sallar.push(s);
+    cukur(w);
+    return s;
+  };
+  // sel: robot tetik'i gecince x0'dan x1'e ilerleyen su baskini
+  const kovala = (tetik, x0, x1, hiz) => { const k = { tetik: tetik, x0: x0, x1: x1, hiz: hiz, x: x0, y: z.y, aktif: false }; B.kovalar.push(k); return k; };
+  // fan: ustune gelen robotu h kadar yukari ufler
+  const fan = (x, w, h, kapali) => { const f = { x0: x, x1: x + w, y: z.y, h: h, kapali: !!kapali, kapali0: !!kapali }; B.fanlar.push(f); temiz(x - 250, x + w + 250); return f; };
+  // ari: yuk yuksekliginde x0..x1 arasinda gezen avci dron; havadaki robotu kovalar
+  const ari = (x0, x1, yuk) => {
+    const a = { tip: 'ari', x: x0, y: z.y - yuk, bx: x0, by: z.y - yuk, x0: x0, x1: x1, yon: 1, olu: false, oluT: 0, kizgin: 0, vy: 0 };
+    B.arilar.push(a); temiz(x0 - 200, x1 + 200);
+    return a;
+  };
+  // ayna: lazeri hedefine (sigorta ya da baska bir ayna) yansitir. hedef2 varsa salterle cevrilir
+  const ayna = (x, h, hedef) => { const a = { tip: 'ayna', x: x, y: z.y - h, hedef: hedef, hedef2: null, t: 9, kapali: false, kapali0: false }; B.aynalar.push(a); temiz(x - 250, x + 250); return a; };
+  // taret: x0..x1 arasindaki robota kilitlenip ates eder. zirhli olan lazerle susturulamaz
+  const taret = (x, h, x0, x1) => {
+    const t = { tip: 'taret', x: x, y: z.y - h, yer: z.y, x0: x0, x1: x1, kilit: 0, sus: 0, ates: 9, ac: 1.57, kapali: false, kapali0: false,
+                zirhli: false, olu: false, yapildi: false };
+    B.taretler.push(t); temiz(x0 - 100, x1 + 100);
+    return t;
+  };
+  // enerji dalgasi: x0..x1 arasini yon yonunde supurur. guc = kalkandan goturdugu enerji
+  const dalga = (x0, x1, periyot, faz, yon) => { const d = { x0: x0, x1: x1, y: z.y, periyot: periyot, faz: faz || 0, yon: yon || -1, x: -1e9, guc: 0.4, kapali: false, kapali0: false }; B.dalgalar.push(d); return d; };
+  // cekirdegin nabzi: x0..x1 arasinda her periyotta bir atar
+  const nabiz = (x0, x1, periyot, faz) => { const n = { x0: x0, x1: x1, y: z.y, periyot: periyot, faz: faz || 0 }; B.nabizlar.push(n); return n; };
+
+  // bitis odasi (kasanin en ici): son bolumun sonuna eklenir
   const odaEkle = () => {
     B.oyunSonX = z.x;
     z.bosluk(700);
@@ -312,7 +367,8 @@ function kurucu() {
            kule: kule, dron: dron, pres: pres, elektrik: elektrik, lazer: lazer, diken: diken, alcak: alcak, dar: dar,
            bariyer: bariyer, sandik: sandik, plaka: plaka, asansor: asansor, etki: etki, tlamba: tlamba, golge: golge,
            dortayak: dortayak, paletli: paletli, nisan: nisan, asili: asili, kopru: kopru, yapiBasla: yapiBasla,
-           odaEkle: odaEkle, bitir: bitir };
+           halka: halka, halkali: halkali, suru: suru, buhar: buhar, sal: sal, kovala: kovala, fan: fan, ari: ari, ayna: ayna,
+           taret: taret, dalga: dalga, nabiz: nabiz, odaEkle: odaEkle, bitir: bitir };
 }
 
 // ============ BOLUM 1 - YUZEY (yagmurlu sehir) ============
@@ -860,12 +916,572 @@ function bolum2() {
   etki('dugme', kapi.x - 285, 116, false, [], { kilit: [s1, s2, s3], red: 'dUcSigorta', kapi: true });
   B.hatlar = [s1, s2, s3];
   temiz(a0, a0 + 3000);
+  return bitir(kapi);
+}
+
+// ============ BOLUM 3 - KANALLAR (kanalizasyon: kanca, fareler, buhar, yukselen su) ============
+function bolum3() {
+  const K = kurucu();
+  const { z, B, nesne, kontrol, temiz, ipucu, dusunce, cukur, kalasli, hareketli, duvarCik, duvarIn, alcak, dar,
+          sandik, etki, tlamba, nisan, kopru, halka, halkali, suru, buhar, sal, kovala, bitir } = K;
+  B.tema = { ic: true, su: true, renk: '34,74,48' };
+  let a0 = 0;
+  const ada = (x) => { sandik(x, x, x + 76); kontrol(x + 38); };     // oynamayan sandik: farelerin cikamadigi ada
+
+  // 1 - giris: kaidede kanca. Ilk su kanali halkalara tutunarak gecilir
+  z.malzeme('beton').duz(300 + 1500);
+  kontrol(250); tlamba(420); tlamba(1250);
+  dusunce(380, 'd3Bas');
+  etki('silah', 760, 84, false, [], { verir: 'kanca', dusun: 'dKanca' });
+  ipucu(1160, 'ipKanca');
+  kontrol(1380);
+  ipucu(z.x + 215, 'ipBirak');
+  halkali(430);
+  z.duz(800);
+  kontrol(z.x - 700); tlamba(z.x - 560);
+
+  // 2 - ilk fareler: arkadaki borudan cikar, zeminde kosarlar. Sandigin ustune cikamazlar; lazer dagitir
+  a0 = z.x; z.duz(2500);
+  kontrol(a0 + 60); tlamba(a0 + 240);
+  dusunce(a0 + 200, 'dFare'); ipucu(a0 + 560, 'ipFare');
+  suru(a0 + 130, a0 + 430, a0 + 2380);
+  ada(a0 + 900); tlamba(a0 + 1060);
+  ada(a0 + 1560); tlamba(a0 + 1720);
+  kontrol(a0 + 2440);
+  duvarCik(190);
+
+  // 3 - ust kanal: halkalarin arasinda buhar fiskirir; ardindan raya asili platform
+  a0 = z.x; z.duz(600);
+  kontrol(a0 + 120); tlamba(a0 + 250);
+  dusunce(a0 + 280, 'dBuhar'); ipucu(a0 + 520, 'ipBuhar');
+  buhar(z.x + 250, 3.4, 0); buhar(z.x + 500, 3.4, 1.7);
+  halkali(750);
+  z.duz(700);
+  kontrol(z.x - 580); tlamba(z.x - 430);
+  hareketli(560, 150, 8);
+  z.duz(500);
+  kontrol(z.x - 400); tlamba(z.x - 300);
+  ipucu(z.x - 70, 'ipIn');
+  duvarIn(190);
+
+  // 4 - yukselen su: sala bin, karsidaki kolu kancayla cek; su yukselir, sal ust kata cikar
+  a0 = z.x; z.duz(1000);
+  kontrol(a0 + 100); tlamba(a0 + 320);
+  dusunce(a0 + 560, 'dSal'); ipucu(a0 + 840, 'ipKol');
+  const s4 = sal(340, 0, -200);
+  nisan('kol', z.x + 80, 290, [], { cevir: [s4] });
+  z.set(-200); z.duz(800);
+  kontrol(z.x - 640); tlamba(z.x - 520);
+
+  // 5 - buhar koridoru: onde buhar, arkada fareler. Adada bekle, buhar kesilince kos
+  a0 = z.x; z.duz(2700);
+  kontrol(a0 + 60);
+  dusunce(a0 + 300, 'dSikis');
+  suru(a0 + 110, a0 + 420, a0 + 2250);
+  ada(a0 + 620); buhar(a0 + 880, 3.2, 0); tlamba(a0 + 760);
+  ada(a0 + 1100); buhar(a0 + 1360, 3.2, 1.2);
+  ada(a0 + 1580); buhar(a0 + 1830, 3.2, 0); buhar(a0 + 1960, 3.2, 0.5); tlamba(a0 + 1720);
+  kontrol(a0 + 2330); tlamba(a0 + 2460);
+
+  // 6 - inen su: kol suyu bosaltir, sal asagi iner. Alt tunelde sandigi sete kadar it; fareler pesinde
+  a0 = z.x; z.duz(800);
+  kontrol(a0 + 100); tlamba(a0 + 300);
+  dusunce(a0 + 420, 'dDerin');
+  const s6 = sal(320, 240, 0, true);
+  nisan('kol', a0 + 690, 250, [], { cevir: [s6] });
+  z.set(240);
+  a0 = z.x; z.duz(2000);
+  kontrol(a0 + 90); tlamba(a0 + 200);
+  suru(a0 + 300, a0 + 560, a0 + 1990);
+  dusunce(a0 + 700, 'dSandikFare');
+  sandik(a0 + 820, a0 + 760, a0 + 2000);
+  tlamba(a0 + 1400);
+  z.set(-150); z.duz(700);
+  kontrol(z.x - 560); tlamba(z.x - 430);
+
+  // 7 - zemin farelerin: boru ortada. Halkadan halkaya gec, yere basma; arada buhar
+  a0 = z.x; z.duz(2700);
+  kontrol(a0 + 80); tlamba(a0 + 200);
+  dusunce(a0 + 260, 'dZemin'); ipucu(a0 + 440, 'ipZemin');
+  suru(a0 + 1350, a0 + 520, a0 + 2180);
+  for (let i = 0; i < 6; i++) halka(a0 + 760 + i * 310, 330);
+  buhar(a0 + 1535, 3.6, 0);
+  tlamba(a0 + 915); tlamba(a0 + 1845);
+  kontrol(a0 + 2420); tlamba(a0 + 2520);
+
+  // 8 - vana: dugme buhari kisa sure keser. Kos, halkalardan gec, buhar yeniden acilmadan cik
+  a0 = z.x; z.duz(760);
+  kontrol(a0 + 80); tlamba(a0 + 240);
+  dusunce(a0 + 200, 'dVana');
+  const p8 = z.x;
+  const b8 = [buhar(p8 + 173, 0, 0), buhar(p8 + 347, 0, 0)];
+  halkali(520);
+  z.duz(900);
+  b8.push(buhar(p8 + 850, 0, 0), buhar(p8 + 940, 0, 0));
+  etki('dugme', a0 + 330, 116, false, b8, { sure: 10, dusun: 'dSure' });
+  kontrol(z.x - 330); tlamba(z.x - 250);
+
+  // 9 - iki sal, tek kol: biri cikarken oteki iner. Iki kez cek, iki kat yuksel
+  a0 = z.x; z.duz(700);
+  kontrol(a0 + 100); tlamba(a0 + 300);
+  dusunce(a0 + 380, 'dIkiSal');
+  const sA = sal(300, 0, -200);
+  z.set(-200); z.duz(240);
+  const kx9 = z.x - 120;
+  kontrol(kx9);
+  const sB = sal(300, 0, -200, true);
+  nisan('kol', kx9, 260, [], { cevir: [sA, sB] });
+  z.set(-200); z.duz(700);
+  kontrol(z.x - 560); tlamba(z.x - 430);
+
+  // 10 - karsidaki kol kopruyu uzatir; ardindan curuk kalaslar
+  const k10 = kopru(360);
+  nisan('kol', z.x + 60, 150, [], { ac: [k10] });
+  z.duz(600);
+  kontrol(z.x - 480); tlamba(z.x - 380);
+  kalasli(170); z.duz(260); kalasli(170); z.duz(500);
+  kontrol(z.x - 380); tlamba(z.x - 280);
+  ipucu(z.x - 70, 'ipIn');
+  duvarIn(400);
+
+  // 11 - buyuk havuz: uzun halka dizileri, ortada raya asili platform, buhar
+  a0 = z.x; z.duz(700);
+  kontrol(a0 + 100); tlamba(a0 + 300);
+  dusunce(a0 + 400, 'dHavuz');
+  buhar(z.x + 400, 3.0, 0);
+  halkali(800);
+  z.duz(240);
+  kontrol(z.x - 120);
+  hareketli(620, 150, 9);
+  z.duz(240);
+  kontrol(z.x - 120); tlamba(z.x - 120);
+  buhar(z.x + 225, 3.0, 0); buhar(z.x + 675, 3.0, 1.5);
+  halkali(900);
+  z.duz(800);
+  kontrol(z.x - 660); tlamba(z.x - 520);
+
+  // 12 - boruyu tika: sandigi fare borusunun onune it. Yoksa surunme tunelinde yakalarlar
+  a0 = z.x; z.duz(3000);
+  kontrol(a0 + 80); tlamba(a0 + 200);
+  dusunce(a0 + 300, 'dTika'); ipucu(a0 + 600, 'ipTika');
+  sandik(a0 + 560, a0 + 500, a0 + 1076);
+  suru(a0 + 1000, a0 + 400, a0 + 2900).tikanir = true;
+  tlamba(a0 + 1000); kontrol(a0 + 1250);
+  dar(a0 + 1700, 700);
+  kontrol(a0 + 2520); tlamba(a0 + 2700);
+
+  // 13 - yukari: basamak basamak yukselen duvarlar, her birinin ustunde bir halka (kancayla tirman)
+  a0 = z.x; z.duz(500);
+  kontrol(a0 + 100); tlamba(a0 + 250);
+  dusunce(a0 + 300, 'dTirman');
+  for (let i = 0; i < 4; i++) {
+    z.set(-170); halka(z.x + 70, 330); z.duz(i < 3 ? 420 : 700);
+    if (i === 1) kontrol(z.x - 300);
+  }
+  kontrol(z.x - 560); tlamba(z.x - 420);
+
+  // 14 - sel: arkadan su baskini gelir. Durmadan kos: bosluklari atla, borularin altindan egil, halkalara tutun
+  a0 = z.x; z.duz(900);
+  kontrol(a0 + 80); tlamba(a0 + 260);
+  dusunce(a0 + 440, 'dSel');
+  const t14 = a0 + 700;
+  z.duz(500); cukur(110); z.duz(600);
+  alcak(z.x - 330, 150);
+  kontrol(z.x - 60); tlamba(z.x - 60);
+  z.duz(500); halkali(430); z.duz(700);
+  alcak(z.x - 420, 150);
+  cukur(110); z.duz(420); kontrol(z.x - 300); tlamba(z.x - 300); cukur(120); z.duz(700);
+  alcak(z.x - 380, 170);
+  z.duz(300);
+  kovala(t14, t14 - 520, z.x - 150, 168);
+  duvarCik(260);
+  z.duz(600);
+  kontrol(z.x - 480); tlamba(z.x - 380);
+  dusunce(z.x - 420, 'dSelBitti');
+
+  // 15 - pompa odasi: kapi uc kol ister. Biri buharin ardinda, biri fare zemininin ustunde, biri suyun karsisinda
+  a0 = z.x; z.duz(1500);
+  kontrol(a0 + 100); tlamba(a0 + 300);
+  dusunce(a0 + 420, 'dPompa');
+  buhar(a0 + 900, 3.0, 0); buhar(a0 + 1010, 3.0, 0.6);
+  const k1 = nisan('kol', a0 + 1250, 240, [], {});
+  const b0 = z.x; z.duz(1900);
+  kontrol(b0 + 60); tlamba(b0 + 150);
+  suru(b0 + 1000, b0 + 380, b0 + 1560);
+  for (let i = 0; i < 4; i++) halka(b0 + 640 + i * 330, 330);
+  const k2 = nisan('kol', b0 + 1135, 520, [], {});
+  kontrol(b0 + 1760); tlamba(b0 + 1800);
+  const c0 = z.x; z.duz(500);
+  kontrol(c0 + 100); tlamba(c0 + 250);
+  const p15 = z.x, kp = kopru(560);
+  halka(p15 + 200, 330);
+  const k3 = nisan('kol', z.x + 60, 160, [], { ac: [kp] });
+  z.duz(1700);
+  kontrol(z.x - 1560); tlamba(z.x - 1400);
+  const kapi = nesne('kapi', z.x - 450);
+  tlamba(kapi.x - 430);
+  k1.grup = k2.grup = k3.grup = [k1, k2, k3]; k1.grupAc = k2.grupAc = k3.grupAc = [];
+  k1.grupDusun = k2.grupDusun = k3.grupDusun = true;
+  etki('dugme', kapi.x - 285, 116, false, [], { kilit: [k1, k2, k3], red: 'd3Kilit', kapi: true });
+  B.hatlar = [k1, k2, k3];
+  temiz(z.x - 1900, z.x + 400);
+  return bitir(kapi);
+}
+
+// ============ BOLUM 4 - CATILAR (firtinali catilar: sirt iticisi, fanlar, arilar, taretler, aynalar) ============
+function bolum4() {
+  const K = kurucu();
+  const { z, B, nesne, kontrol, temiz, ipucu, dusunce, cukur, hareketli, siper, lazer,
+          etki, nisan, kopru, halka, fan, ari, ayna, taret, bitir } = K;
+  B.tema = { ic: false, firtina: true };
+  let a0 = 0;
+  const lamba = (x) => nesne('lamba', x);
+
+  // 1 - cati: kaidede sirt iticisi. Ilk bosluk ziplayarak gecilmez; ikincisinin karsisi daha yuksek
+  z.malzeme('beton').duz(300 + 1500);
+  kontrol(250); lamba(450); lamba(1250);
+  dusunce(380, 'd4Bas');
+  etki('silah', 760, 84, false, [], { verir: 'jet', dusun: 'dJet' });
+  ipucu(1260, 'ipJet');
+  kontrol(1380);
+  cukur(270); z.duz(700);
+  kontrol(z.x - 600); lamba(z.x - 420);
+  cukur(250); z.set(-170); z.duz(800);
+  kontrol(z.x - 680); lamba(z.x - 500);
+  dusunce(z.x - 620, 'dYakit');
+
+  // 2 - havalandirma: fan robotu yukari ufler. Ikinci fan kapali: sigortasini vur
+  a0 = z.x; z.duz(900);
+  dusunce(a0 + 300, 'dFan'); ipucu(a0 + 600, 'ipFan');
+  fan(a0 + 740, 160, 500);
+  z.set(-400); z.duz(900);
+  kontrol(z.x - 780); lamba(z.x - 600);
+  const f2 = fan(z.x - 160, 160, 500, true);
+  nisan('sigorta', z.x - 340, 220, [], { ac: [f2] });
+  z.set(-400); z.duz(800);
+  kontrol(z.x - 680); lamba(z.x - 520);
+
+  // 3 - arilar: boslugun ustunde devriye gezen avci dronlar. Havadayken kovalarlar; lazerle dusur ya da yere in
+  a0 = z.x; z.duz(900);
+  dusunce(a0 + 300, 'dAri'); ipucu(a0 + 620, 'ipAri');
+  ari(a0 + 820, a0 + 1300, 210);
+  cukur(290); z.duz(600);
+  kontrol(z.x - 480); lamba(z.x - 380);
+  ari(z.x - 100, z.x + 420, 190); ari(z.x + 380, z.x + 900, 260);
+  cukur(280); z.duz(260); cukur(280); z.duz(800);
+  kontrol(z.x - 680); lamba(z.x - 520);
+
+  // 4 - taret: direkteki nisanci. Gorunce kilitlenir; siperin arkasinda egil ya da gozunu vur (bir sure susar)
+  a0 = z.x; z.duz(2600);
+  kontrol(a0 + 80); lamba(a0 + 200);
+  dusunce(a0 + 300, 'dTaret'); ipucu(a0 + 540, 'ipTaret');
+  siper(a0 + 620);
+  taret(a0 + 1100, 300, a0 + 700, a0 + 1500);
+  siper(a0 + 900); siper(a0 + 1160); siper(a0 + 1420);
+  kontrol(a0 + 1620); lamba(a0 + 1700);
+  taret(a0 + 2150, 300, a0 + 1800, a0 + 2500).zirhli = true;
+  siper(a0 + 1960); siper(a0 + 2200); siper(a0 + 2420);
+  kontrol(a0 + 2560);
+
+  // 5 - ayna: kafesli sigorta dogrudan vurulmaz. Aynaya ates et, isin sigortaya yansir; kopru uzanir
+  a0 = z.x; z.duz(900);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  dusunce(a0 + 320, 'dAyna'); ipucu(a0 + 600, 'ipAyna');
+  const k5 = kopru(520);
+  const s5 = nisan('sigorta', a0 + 420, 330, [], { ac: [k5], ayna: true });
+  ayna(a0 + 780, 300, s5);
+  z.duz(800);
+  kontrol(z.x - 680); lamba(z.x - 520);
+
+  // 6 - yukselen catilar: her bosluk bir kat yukari; arada arilar
+  a0 = z.x; z.duz(500);
+  dusunce(a0 + 200, 'dYuksel');
+  for (let i = 0; i < 4; i++) {
+    if (i === 1 || i === 3) ari(z.x - 60, z.x + 330, 330);
+    cukur(220); z.set(-150); z.duz(i === 3 ? 800 : 380);
+    if (i === 1) kontrol(z.x - 300);
+  }
+  kontrol(z.x - 680); lamba(z.x - 520);
+
+  // 7 - ayna makasi: salter aynayi cevirir. Bir yonde kopru sigortasi, oteki yonde fan sigortasi
+  a0 = z.x; z.duz(1000);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  dusunce(a0 + 300, 'dMakas');
+  const k7 = kopru(480);
+  z.duz(700);
+  const f7 = fan(z.x - 160, 160, 500, true);
+  const s7a = nisan('sigorta', a0 + 380, 340, [], { ac: [k7], ayna: true });
+  const s7b = nisan('sigorta', a0 + 620, 360, [], { ac: [f7], ayna: true });
+  ayna(a0 + 880, 290, s7a).hedef2 = s7b;
+  etki('salter', a0 + 760, 116, false, [], { cevir: [B.aynalar[B.aynalar.length - 1]] });
+  z.set(-400); z.duz(800);
+  kontrol(z.x - 680); lamba(z.x - 520);
+
+  // 8 - halka + itici: bosluk cok genis. Uc, havada halkaya tutun (yakit dolar), firla, yine uc
+  a0 = z.x; z.duz(700);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  dusunce(a0 + 300, 'dHavada'); ipucu(a0 + 560, 'ipHavada');
+  halka(z.x + 520, 380);
+  cukur(900); z.duz(700);
+  kontrol(z.x - 600); lamba(z.x - 450);
+  halka(z.x + 330, 380); halka(z.x + 760, 380); ari(z.x + 200, z.x + 900, 150);
+  cukur(1100); z.duz(800);
+  kontrol(z.x - 680); lamba(z.x - 520);
+
+  // 9 - zirhli taret + fan: yukselirken acikta kalirsin. Aynadan sigortasini vur, taret kapanir
+  a0 = z.x; z.duz(1600);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  dusunce(a0 + 400, 'dZirhTaret');
+  const t9 = taret(a0 + 1250, 620, a0 + 1000, a0 + 1640); t9.zirhli = true;
+  const s9 = nisan('sigorta', a0 + 1130, 430, [t9], { ayna: true });
+  siper(a0 + 900);
+  ayna(a0 + 620, 330, s9);
+  fan(a0 + 1440, 160, 500);
+  z.set(-400); z.duz(800);
+  kontrol(z.x - 680); lamba(z.x - 520);
+
+  // 10 - dar catilar: kisa catilar, genis bosluklar, arilar ve yanip sonen lazer
+  a0 = z.x; z.duz(600);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  for (let i = 0; i < 5; i++) {
+    if (i % 2 === 0) ari(z.x - 40, z.x + 560, 240 - i * 10);
+    cukur(300); z.duz(250);
+    if (i === 1 || i === 3) lazer(z.x - 150, 56, 'alt', 2.6, i);
+    if (i === 2) kontrol(z.x - 125);
+  }
+  z.duz(600);
+  kontrol(z.x - 480); lamba(z.x - 380);
+
+  // 11 - tek guc hatti: ayni anda yalnizca bir fan doner. Yukari cik, sigortayi yukaridan vur, guc oteki fana gecer
+  a0 = z.x; z.duz(900);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  dusunce(a0 + 300, 'dIkiFan');
+  const fA = fan(a0 + 740, 160, 500);
+  const hy = z.y;
+  z.set(-400); z.duz(1000);
+  const fB = fan(z.x - 160, 160, 500, true);
+  B.nisanlar.push({ tip: 'sigorta', x: a0 + 560, y: hy, h: 300, hedef: [], ac: [], cevir: [fA, fB], yapildi: false, t: 9 });
+  kontrol(z.x - 880); lamba(z.x - 700);
+  z.set(-400); z.duz(800);
+  kontrol(z.x - 680); lamba(z.x - 520);
+
+  // 12 - gozetim altinda: taret raya asili platformu izler; ardindan iki taretin gordugu halkali bosluk
+  a0 = z.x; z.duz(800);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  dusunce(a0 + 300, 'dGozetim');
+  siper(a0 + 600);
+  taret(a0 + 1150, 330, a0 + 700, a0 + 1640);
+  hareketli(760, 150, 9.5);
+  z.duz(500);
+  siper(z.x - 380); kontrol(z.x - 380); lamba(z.x - 200);
+  taret(z.x + 350, 430, z.x + 80, z.x + 700); taret(z.x + 760, 430, z.x + 450, z.x + 1100);
+  halka(z.x + 300, 380); halka(z.x + 700, 380);
+  cukur(1000); z.duz(900);
+  siper(z.x - 760); kontrol(z.x - 680); lamba(z.x - 500);
+
+  // 13 - arilar yuvasi: uc bosluk, alti ari. Once hepsini dusur ya da aralarindan sec
+  a0 = z.x; z.duz(600);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  for (let i = 0; i < 3; i++) {
+    ari(z.x - 60, z.x + 340, 170 + i * 40); ari(z.x + 40, z.x + 420, 300 - i * 30);
+    cukur(290); z.set(i === 1 ? 120 : -120); z.duz(420);
+    if (i === 1) kontrol(z.x - 210);
+  }
+  z.duz(500);
+  kontrol(z.x - 400); lamba(z.x - 300);
+
+  // 14 - anten: kopru uc kilit ister. Karsidaki kol, aynali sigorta ve boslugun ortasinda, asiliyken vurulan sigorta
+  a0 = z.x; z.duz(1200);
+  kontrol(a0 + 80); lamba(a0 + 220);
+  dusunce(a0 + 400, 'dAnten');
+  const q3 = nisan('kol', a0 + 520, 400, [], {});
+  const q2 = nisan('sigorta', a0 + 760, 420, [], { ayna: true });
+  ayna(a0 + 1040, 320, q2);
+  const k14 = kopru(1100);
+  halka(a0 + 1530, 380);
+  const q1 = nisan('sigorta', a0 + 2060, 300, [], {});
+  ari(a0 + 1300, a0 + 2200, 120);
+  q1.grup = q2.grup = q3.grup = [q1, q2, q3]; q1.grupAc = q2.grupAc = q3.grupAc = [k14];
+  q1.grupDusun = q2.grupDusun = q3.grupDusun = true;
+  z.duz(1900);
+  kontrol(z.x - 1780); lamba(z.x - 1600);
+  const kapi = nesne('kapi', z.x - 450);
+  lamba(kapi.x - 430);
+  etki('dugme', kapi.x - 285, 116, false, [], { kapi: true });
+  B.hatlar = [q1, q2, q3];
+  temiz(z.x - 2000, z.x + 400);
+  return bitir(kapi);
+}
+
+// ============ BOLUM 5 - CEKIRDEK (kalkan, enerji dalgalari, cekirdegin nabzi; sonunda bitis odasi) ============
+function bolum5() {
+  const K = kurucu();
+  const { z, B, nesne, kontrol, temiz, ipucu, dusunce, cukur, siper, elektrik, bariyer, etki, tlamba, golge, dortayak, paletli,
+          nisan, kopru, halka, halkali, fan, ari, ayna, taret, dalga, nabiz, odaEkle, bitir } = K;
+  B.tema = { ic: true, renk: '92,28,18' };
+  let a0 = 0;
+
+  // 1 - giris: kaidede kalkan. Ilk taret zirhli: egil, kalkan atesi geri yollar
+  z.malzeme('beton').duz(300 + 2300);
+  kontrol(250); tlamba(420); tlamba(1250);
+  dusunce(380, 'd5Bas');
+  etki('silah', 760, 84, false, [], { verir: 'kalkan', dusun: 'dKalkan' });
+  ipucu(1180, 'ipKalkan');
+  kontrol(1300);
+  taret(1900, 300, 1380, 2250).zirhli = true;
+  kontrol(2280);
+
+  // 2 - dalga koridoru: enerji dalgasi koridoru supurur. Dalgaya don, egil
+  a0 = z.x; z.duz(2600);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  dusunce(a0 + 260, 'dDalga'); ipucu(a0 + 520, 'ipDalga');
+  dalga(a0 + 400, a0 + 2300, 5.2, 0, -1);
+  tlamba(a0 + 1350); kontrol(a0 + 1350); kontrol(a0 + 2400);
+
+  // 3 - iki yonden dalga: biri onden, biri arkadan. Her seferinde gelene don
+  a0 = z.x; z.duz(2400);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  dusunce(a0 + 300, 'dArkaDalga');
+  dalga(a0 + 300, a0 + 2200, 5.6, 0, 1);
+  dalga(a0 + 300, a0 + 2200, 5.6, 2.8, -1);
+  kontrol(a0 + 1250); tlamba(a0 + 1250); kontrol(a0 + 2300);
+
+  // 4 - nabiz: cekirdek belli araliklarla atar. Atarken kalkanin ardinda ya da siperde ol
+  a0 = z.x; z.duz(2800);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  dusunce(a0 + 260, 'dNabiz'); ipucu(a0 + 540, 'ipNabiz');
+  nabiz(a0 + 500, a0 + 2700, 4.2);
+  siper(a0 + 900); siper(a0 + 1500); siper(a0 + 2100);
+  kontrol(a0 + 1500); tlamba(a0 + 1650); kontrol(a0 + 2750);
+
+  // 5 - nabiz + golge: egildiginde sirtin donuk kalir, golge yaklasir. Ortadaki lambanin sigortasini vur
+  a0 = z.x; z.duz(2800);
+  kontrol(a0 + 60);
+  dusunce(a0 + 300, 'dNabizGolge');
+  golge(a0 + 150, a0 + 500, a0 + 2800, a0 + 100, a0 + 2500);
+  nabiz(a0 + 500, a0 + 2500, 3.6);
+  const l5 = tlamba(a0 + 1400, true);
+  nisan('sigorta', a0 + 1250, 240, [], { ac: [l5] });
+  kontrol(a0 + 1400); tlamba(a0 + 2650); kontrol(a0 + 2600);
+
+  // 6 - capraz ates: biri arkanda, biri onunde iki zirhli taret. Kalkan tek yone bakar: sirayla don
+  a0 = z.x; z.duz(2400);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  dusunce(a0 + 300, 'dCapraz');
+  taret(a0 + 350, 300, a0 + 600, a0 + 1900).zirhli = true;
+  taret(a0 + 1700, 300, a0 + 900, a0 + 1900).zirhli = true;
+  siper(a0 + 1200);
+  kontrol(a0 + 2000); tlamba(a0 + 2100);
+
+  // 7 - halkalar + dalga: asiliyken dalga altindan gecer; adaya inince kalkan
+  a0 = z.x; z.duz(700);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  halkali(700); z.duz(900);
+  dalga(z.x - 800, z.x - 100, 3.4, 0, -1);
+  kontrol(z.x - 860);
+  halkali(600); z.duz(700);
+  kontrol(z.x - 600); tlamba(z.x - 450);
+
+  // 8 - zirhli bekci: ustunden uc, pesine tak. Dalganin yoluna girince yanar
+  a0 = z.x; z.duz(2600);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  dusunce(a0 + 300, 'dDalgaBekci');
+  siper(a0 + 420);
+  dortayak(a0 + 700, a0 + 1100, true);
+  dalga(a0 + 1200, a0 + 2300, 6.0, 0, -1);
+  kontrol(a0 + 2400); tlamba(a0 + 2450);
+
+  // 9 - tasiyici + dalga: paletlinin ustunde elektrikli zemini gecerken dalga gelir; ustunde egil
+  a0 = z.x; z.duz(2800);
+  kontrol(a0 + 60); tlamba(a0 + 180);
+  dusunce(a0 + 240, 'dTasiDalga');
+  elektrik(a0 + 560, 1500, 0, 0).izgara = true;
+  paletli(a0 + 380, a0 + 2240);
+  dalga(a0 + 500, a0 + 2300, 5.0, 0, -1);
+  tlamba(a0 + 1300); tlamba(a0 + 2400); kontrol(a0 + 2450);
+
+  // 10 - fan kuyusu + nabiz: havada kalkan yok. Nabizdan hemen sonra kos, yuksel
+  a0 = z.x; z.duz(1200);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  dusunce(a0 + 300, 'dKuyu');
+  siper(a0 + 800);
+  nabiz(a0 + 500, a0 + 1300, 3.8);
+  fan(a0 + 1040, 160, 500);
+  z.set(-400); z.duz(900);
+  kontrol(z.x - 780); tlamba(z.x - 600);
+
+  // 11 - hendekler: dalga cok guclu ve sik, kalkan yetmez. Hendege in, ustunden gecsin
+  a0 = z.x; z.duz(500);
+  dusunce(a0 + 200, 'dHendek');
+  const d0 = z.x;
+  for (let i = 0; i < 4; i++) { z.duz(360); z.set(60); z.duz(170); z.set(-60); if (i === 1) kontrol(z.x + 60); }
+  z.duz(500);
+  dalga(d0 + 60, z.x - 300, 2.3, 0, -1).guc = 0.7;
+  kontrol(z.x - 200); tlamba(z.x - 150);
+
+  // 12 - ayna zinciri: salter aynayi cevirir. Bir yonde lamba (golgeden korur), oteki yonde ikinci ayna -> bariyer
+  a0 = z.x; z.duz(2600);
+  kontrol(a0 + 60); tlamba(a0 + 150);
+  dusunce(a0 + 300, 'dZincir');
+  golge(a0 + 200, a0 + 600, a0 + 2600, a0 + 150, a0 + 1500);
+  const lz1 = tlamba(a0 + 1100, true), g12 = bariyer(a0 + 1750);
+  const sL = nisan('sigorta', a0 + 940, 420, [], { ac: [lz1], ayna: true });
+  const sG = nisan('sigorta', a0 + 1960, 300, [g12], { ayna: true });
+  const mB = ayna(a0 + 1560, 400, sG);
+  const mA = ayna(a0 + 1300, 300, sL); mA.hedef2 = mB;
+  etki('salter', a0 + 1160, 116, false, [], { cevir: [mA] });
+  kontrol(a0 + 1100); kontrol(a0 + 2000); tlamba(a0 + 2200);
+
+  // 13 - ucurum: uc, havada halkaya tutun; nabiz atan kisa adalarda siper; ari bekcisi
+  a0 = z.x; z.duz(700);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  dusunce(a0 + 300, 'dUcurum');
+  halka(z.x + 430, 380); ari(z.x + 100, z.x + 800, 140);
+  cukur(760); z.duz(420);
+  siper(z.x - 210); kontrol(z.x - 210);
+  nabiz(z.x - 420, z.x, 3.4);
+  cukur(300); z.duz(420);
+  siper(z.x - 210); kontrol(z.x - 210);
+  nabiz(z.x - 420, z.x, 3.4, 1.7);
+  halkali(700);
+  z.duz(800);
+  kontrol(z.x - 660); tlamba(z.x - 500);
+
+  // 14 - son savunma: dalga onden, zirhli taret tepeden
+  a0 = z.x; z.duz(2600);
+  kontrol(a0 + 60); tlamba(a0 + 200);
+  dusunce(a0 + 300, 'dSavunma');
+  dalga(a0 + 500, a0 + 2300, 5.4, 0, -1);
+  taret(a0 + 1500, 300, a0 + 700, a0 + 2200).zirhli = true;
+  siper(a0 + 1000);
+  kontrol(a0 + 2400); tlamba(a0 + 2450);
+
+  // 15 - cekirdek kapisi: uc kilit. Zirhli taret (atesini geri yolla), aynali sigorta, ucurumun karsisindaki kol
+  a0 = z.x; z.duz(2200);
+  kontrol(a0 + 80); tlamba(a0 + 250);
+  dusunce(a0 + 500, 'dCekirdek');
+  nabiz(a0 + 400, a0 + 2100, 4.6);
+  siper(a0 + 700); siper(a0 + 1500); kontrol(a0 + 1500);
+  const q1 = taret(a0 + 1150, 300, a0 + 800, a0 + 1450); q1.zirhli = true;
+  const q2 = nisan('sigorta', a0 + 1250, 430, [], { ayna: true });
+  ayna(a0 + 1780, 300, q2);
+  const p15 = z.x, kp = kopru(560);
+  halka(p15 + 230, 380);
+  const q3 = nisan('kol', z.x + 70, 300, [], { ac: [kp] });
+  q2.grup = q3.grup = [q1, q2, q3]; q2.grupAc = q3.grupAc = []; q2.grupDusun = q3.grupDusun = true;
+  z.duz(1900);
+  kontrol(z.x - 1780); tlamba(z.x - 1600);
+  const kapi = nesne('kapi', z.x - 450);
+  tlamba(kapi.x - 430);
+  etki('dugme', kapi.x - 285, 116, false, [], { kilit: [q1, q2, q3], red: 'd5Kilit', kapi: true });
+  B.hatlar = [q1, q2, q3];
+  temiz(z.x - 2000, z.x + 800);
   odaEkle();
   return bitir(kapi);
 }
 
-const BOLUM_SAYI = 5;      // planlanan bolum sayisi (sinyal yuzdesi buna gore dolar)
-const BOLUM_HAZIR = 2;     // yapilmis bolum sayisi; kasanin icindeki bitis odasi su an son hazir bolumun sonunda
+const BOLUM_SAYI = 5;      // toplam bolum sayisi (sinyal yuzdesi buna gore dolar)
+const BOLUM_HAZIR = 5;     // yapilmis bolum sayisi; bitis odasi son bolumun sonunda
 function bolumKur(no) {
-  return no === 2 ? bolum2() : bolum1();
+  return [bolum1, bolum2, bolum3, bolum4, bolum5][clamp(no, 1, BOLUM_HAZIR) - 1]();
 }

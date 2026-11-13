@@ -54,6 +54,8 @@ const Sanat = {
     s.paletli = this.paletli(r);
     s.omuz = this.omuz(r);
     s.sigorta = this.sigorta(r);
+    const r2 = rngYap(31337);      // sonradan eklenenler: ayri tohum (eski gorsellerin dokusu degismesin)
+    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan']) s[ad] = this[ad](r2);
     s.oda = null;      // bitis odasi: ilk gerektiginde uretilir (odaAl)
     s.agaclar = {};
     // arka plan parcalari (3 derinlik)
@@ -916,6 +918,117 @@ const Sanat = {
   },
 
   // ---------- siluetler ----------
+  // ---- bolum 3-5 gorselleri: koyu metal govde + eskitme + ustune eskitilmeyen isikli ayrinti ----
+  _parca(r, w, h, c0, c1, ciz) {
+    const c = tuvalQ(w, h), x = c.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, c0); g.addColorStop(1, c1);
+    x.fillStyle = g;
+    ciz(x, 0);
+    this._eskit(x, r, w, h, 1.6);
+    ciz(x, 1);
+    return c;
+  },
+  // kanca halkasi (merkez = tutunma noktasi)
+  halka(r) {
+    const c = this._parca(r, 30, 46, '#606a71', '#232a2f', (x, f) => {
+      if (f) return;
+      x.fillRect(11, 0, 8, 17);
+      x.beginPath(); x.arc(15, 30, 13, 0, 6.283); x.arc(15, 30, 8, 0, 6.283, true); x.fill('evenodd');
+    });
+    c.kokX = 15; c.kokY = 30;
+    return c;
+  },
+  // kancayla cekilen kol kutusu
+  kol(r) {
+    const c = this._parca(r, 34, 52, '#5e676d', '#272e33', (x, f) => {
+      if (!f) { x.fillRect(3, 6, 28, 40); x.fillStyle = '#12161a'; x.fillRect(13, 12, 8, 28); }
+      else { x.strokeStyle = '#d9b23c'; x.lineWidth = 2; x.beginPath(); x.arc(17, 26, 7, 0, 6.283); x.stroke(); }
+    });
+    c.kokX = 17; c.kokY = 26;
+    return c;
+  },
+  fare(r) {
+    return this._parca(r, 30, 14, '#3d444a', '#14181b', (x, f) => {
+      if (!f) {
+        x.beginPath(); x.ellipse(13, 9, 10, 4.6, 0, 0, 6.283); x.fill();
+        x.beginPath(); x.ellipse(23, 8, 5, 3.2, 0.2, 0, 6.283); x.fill();
+        x.fillRect(0, 9, 6, 1.4);
+      } else { x.fillStyle = '#ff5a3c'; x.fillRect(25, 6.4, 1.7, 1.7); }
+    });
+  },
+  // fare yuvasi: duvardaki boru agzi
+  boruAgiz(r) {
+    return this._parca(r, 60, 60, '#4d565c', '#1c2226', (x, f) => {
+      if (f) return;
+      x.beginPath(); x.arc(30, 30, 29, 0, 6.283); x.fill();
+      x.fillStyle = '#040607'; x.beginPath(); x.arc(30, 30, 21, 0, 6.283); x.fill();
+    });
+  },
+  // fan izgarasi (zeminde)
+  fan(r) {
+    return this._parca(r, 160, 22, '#566067', '#1d2327', (x, f) => {
+      if (f) return;
+      x.fillRect(0, 4, 160, 18);
+      x.fillStyle = '#07090a';
+      for (let i = 8; i < 152; i += 12) x.fillRect(i, 8, 7, 11);
+    });
+  },
+  // avci dron
+  ari(r) {
+    const c = this._parca(r, 48, 30, '#4a545b', '#161b1f', (x, f) => {
+      if (f) return;
+      x.beginPath(); x.ellipse(24, 16, 13, 9, 0, 0, 6.283); x.fill();
+      x.fillRect(2, 4, 44, 3); x.fillRect(22, 6, 4, 6);
+      x.beginPath(); x.moveTo(17, 23); x.lineTo(24, 30); x.lineTo(31, 23); x.closePath(); x.fill();
+    });
+    c.kokX = 24; c.kokY = 16;
+    return c;
+  },
+  ayna(r) {
+    const c = this._parca(r, 14, 56, '#6f7b83', '#2b3237', (x, f) => {
+      if (!f) { x.fillRect(0, 0, 14, 56); return; }
+      const g = x.createLinearGradient(0, 0, 14, 0);
+      g.addColorStop(0, 'rgba(190,225,240,0.7)'); g.addColorStop(1, 'rgba(90,130,150,0.5)');
+      x.fillStyle = g; x.fillRect(3, 3, 5, 50);
+    });
+    c.kokX = 7; c.kokY = 28;
+    return c;
+  },
+  // taret govdesi (namlusu oyunda cizilir)
+  taret(r) {
+    const c = this._parca(r, 52, 34, '#535d64', '#1a2024', (x, f) => {
+      if (f) return;
+      x.fillRect(18, 0, 16, 10); x.fillRect(9, 8, 34, 9);
+      x.beginPath(); x.arc(26, 16, 17, 0, 3.1416); x.fill();
+    });
+    c.kokX = 26;
+    return c;
+  },
+  // kaidede duran yetenekler: kanca, sirt iticisi, kalkan
+  kanca(r) {
+    return this._parca(r, 32, 16, '#69747b', '#2a3136', (x, f) => {
+      if (!f) {
+        x.fillRect(0, 4, 20, 9); x.fillRect(18, 6, 8, 5);
+        x.beginPath(); x.moveTo(25, 2); x.lineTo(32, 8); x.lineTo(25, 14); x.lineTo(27, 8); x.closePath(); x.fill();
+      } else { x.fillStyle = '#d9b23c'; x.fillRect(4, 7, 9, 2); }
+    });
+  },
+  jet(r) {
+    const c = this._parca(r, 22, 42, '#646f76', '#262d32', (x, f) => {
+      if (!f) { x.fillRect(2, 0, 18, 30); x.fillRect(4, 30, 6, 10); x.fillRect(12, 30, 6, 10); x.fillStyle = '#12161a'; x.fillRect(5, 4, 12, 5); }
+      else { x.fillStyle = '#ffb060'; x.fillRect(6, 13, 10, 2); }
+    });
+    c.kokX = 11; c.kokY = 26;
+    return c;
+  },
+  kalkan(r) {
+    return this._parca(r, 28, 28, '#66717a', '#252c31', (x, f) => {
+      if (!f) { x.beginPath(); x.moveTo(14, 1); x.lineTo(26, 6); x.lineTo(24, 19); x.lineTo(14, 27); x.lineTo(4, 19); x.lineTo(2, 6); x.closePath(); x.fill(); }
+      else { x.fillStyle = '#7fe3d0'; x.beginPath(); x.arc(14, 12, 3.4, 0, 6.283); x.fill(); }
+    });
+  },
+
   bina(r, w, h, renk, delik) {
     const c = tuvalQ(w, h, 1.5), x = c.getContext('2d');
     x.fillStyle = renk;

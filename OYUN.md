@@ -1,4 +1,4 @@
-# MaryoWorld - oyun notlari (v0.10)
+# MaryoWorld - oyun notlari (v0.11)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -164,15 +164,16 @@ Oyun `SES.cal(ad, siddet)` ile calar (game.js `ses()` uzakliga gore kisar).
 | el / sev / buldum | dokunma cumlesi, gizli oksama, bitis | hover_tick/ping, shimmer/m1, logo_sting/reverse_bloom |
 
 ## Bolum sistemi (v0.10)
-- Toplam 5 bolum planli (`BOLUM_SAYI`), hazir olan 2 (`BOLUM_HAZIR`). `level.js`: `kurucu()` ortak yardimcilari verir,
-  her bolum kendi fonksiyonu (`bolum1`, `bolum2`), `bolumKur(no)` secer. Yeni bolum: `bolumN()` yaz, `bolumKur`a ekle, `BOLUM_HAZIR` artir.
+- 5 bolum (`BOLUM_SAYI` = `BOLUM_HAZIR` = 5). `level.js`: `kurucu()` ortak yardimcilari verir,
+  her bolum kendi fonksiyonu (`bolum1` .. `bolum5`), `bolumKur(no)` secer.
 - `game.js` `bolumYukle(no)`: bolumu kurar, robotu basa koyar, yetenekleri sifirlar. Bolum sonu kapisi: odasi varsa (`B.oda`) bitis
-  sahnesine, yoksa sonraki bolume gecer. Bitis odasi simdilik 2. bolumun sonunda; yeni bolum geldikce en sona tasinir.
-- Ustte ortada 1-5 dugmeleri (`#bolumler`): dokununca o bolum aninda acilir; hazir olmayanlar soluk (`kilitli`).
+  sahnesine, yoksa sonraki bolume gecer. Bitis odasi 5. bolumun sonunda.
+- Ustte ortada 1-5 dugmeleri (`#bolumler`): dokununca o bolum aninda acilir (onceki bolumlerin yetenekleri hazir gelir).
 - Yasam sinyali yuzdesi 5 bolume yayilir: `(bolumNo - 1 + bolumdeki ilerleme) / 5`.
-- Her bolumun kendi yetenegi olur. 1: egil / surun / tirman / it. 2: omuz lazeri.
+- Her bolumun kendi yetenegi var; bolumun basindaki kaideden alinir, sonraki bolumlerde de kalir (`yet`).
+  1: egil / surun / tirman / it. 2: omuz lazeri. 3: kanca. 4: sirt iticisi. 5: kalkan.
 
-## Bolum 2 - ALT KATLAR (ic mekan, oynanan kisim 42790 px)
+## Bolum 2 - TESIS (ic mekan, oynanan kisim 42790 px)
 - Tema `B.tema.ic`: gok ve yagmur yok, karanlik maskesi cok koyu; yalnizca isigin vurdugu yer gorunur
   (robotun feneri, tavan lambalari `tlamba`, dusman isiklari).
 - Omuz lazeri: bolumun basinda `etki(..., { verir: 'lazer' })` ile alinir (`yet.lazer`), omuza takilir.
@@ -200,4 +201,39 @@ Oyun `SES.cal(ad, siddet)` ile calar (game.js `ses()` uzakliga gore kisar).
 - Kalp ve goz isigi siperlerin arkasindan gorunmez (`siperKirp`); fener huzmesi kalir.
 - Isik renkleri: sokak lambasi sari / kehribar, robot soguk beyaz-mavi, dusman kirmizi.
 - Sesler: yagmur 0.62, adim 0.40, pres 0.81, basamak 0.16 (yeni, yumusak ornek); yeni `fx_lazer`, `fx_vur`.
+
+## Bolum 3 - KANALLAR (kanalizasyon, 48090 px) - yetenek: KANCA
+- Tema `{ ic, su, renk }`: yesilimsi karanlik; butun bosluklar suyla dolu (dusmek = olum).
+- Kanca (`yet.kanca`, `kancaGuncelle`): halkaya (`halka`) dokun -> robot cekilir ve asili kalir (`robot.dis`). Asiliyken zipla = firla,
+  egil = birak, baska halkaya dokun = ona gec. Menzil 470 px, arada zemin olmamali. Kola (`nisan('kol')`) dokun = uzaktan cek.
+  Olculer: asili robotun ayagi halkanin 188 px altinda; firlayinca ~170 px yol alir. `halkali(w)` halkalari kendisi dizer.
+- Fare surusu (`suru(yuva, x0, x1)`): robot bolgede zemine basinca borudan cikar, 255 px/sn (robottan hizli) kosar.
+  Sandigin ustune, merdivene, asili robota ulasamaz. Lazerle vurulunca yuvaya kacar, 2.6 sn sonra yine cikar.
+  `tikanir`: borunun onune sandik itilince cikamaz.
+- Buhar (`buhar`): periyodik fiskirir, egilerek gecilmez; `periyot 0` = hep acik, dugmeyle (sureli) kesilir.
+- Samandira (`sal(w, dAlt, dUst, yuksek)`): cukurda pistonla inip cikan platform; `cevir` kol ile konum degistirir. Olunce basa doner.
+- Sel (`kovala`): tetik gecilince arkadan gelen su baskini (168 px/sn); bosluk, alcak boru ve halkalarla kosu. Olunce son kontrol noktasinin 430 px gerisinden baslar.
+- Bolumler: kanca, ilk fareler, buharli halkalar, yukselen samandira, buhar + fare, inen su + sandik, "zemin farelerin", sureli vana,
+  iki samandira tek kol, kol + kopru, buyuk havuz, boruyu tika, kancayla tirmanis, sel, uc kollu pompa odasi.
+
+## Bolum 4 - CATILAR (dis mekan, firtina, 45290 px) - yetenek: SIRT ITICISI
+- Tema `{ firtina }`: yagmur + simsek (kisa sure her yeri aydinlatir).
+- Itici (`robot.jet`, robot.js): havada zipla basili tutulunca 0.85 sn iter (yerde ve halkada asiliyken dolar).
+  Ziplama + itici: ~315 px yukseklik, ~390 px yatay. Iticiyle frenlenen dusus oldurmez.
+- Fan (`fan(x, w, h, kapali)`): ustundeki robotu h kadar yukari ufler; sigorta / salterle acilir.
+- Ari (`ari(x0, x1, yuk)`): avci dron; robot havadayken kovalar (170 px/sn), yere inince doner. Lazerle duser, 9 sn sonra yenisi gelir.
+- Taret (`taret(x, h, x0, x1)`): bolgedeki robota 1.25 sn kilitlenip ates eder. Siperde egilmek gizler; gozune lazer 7 sn susturur.
+  `zirhli` olan susmaz: gucu sigortadan kesilir (5. bolumde kalkanla geri yollanir).
+- Ayna (`ayna(x, h, hedef)`): lazeri hedefine yansitir. `nisan(..., { ayna: true })` kafesli sigorta yalnizca aynadan vurulur.
+  `hedef2` + salter (`cevir`) ile yon degistirir; hedef baska bir ayna olabilir.
+- `cevir` sigorta: her vurusta hedeflerini acar / kapar (tek guc hatti, iki fan).
+
+## Bolum 5 - CEKIRDEK (ic mekan, kizil, 43480 px + bitis odasi) - yetenek: KALKAN
+- Kalkan (`yet.kalkan`, `kalkanAcik`): yerde egilince acilir, robotun baktigi yone bakar. Enerjisi (`kalkanEn`) darbeyle azalir,
+  saniyede 0.15 dolar; 0.25'in altinda acilmaz. Taret atesi -0.34 (ates geri doner, taret yanar), dalga -0.4, nabiz -0.5.
+- Enerji dalgasi (`dalga(x0, x1, periyot, faz, yon)`): koridoru supurur (140 px yuksek). Dalgaya donup egilmek gerekir;
+  hendekte ya da halkada asiliyken ustten gecer. Zirhli dortayagi da yakar.
+- Nabiz (`nabiz(x0, x1, periyot)`): cekirdek atinca bolgedeki robot kalkanda ya da siperde olmali (ekran once kizarir).
+- Onceki bolumlerin her seyi karisik: golge, zirhli dortayak, paletli, fan, ari, ayna zinciri, halkalar, taretler.
+- Son kapi uc kilit ister: zirhli taret (atesini geri yolla), aynali sigorta, ucurumun karsisindaki kol. Arkasinda bitis odasi.
 

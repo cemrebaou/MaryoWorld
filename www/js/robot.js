@@ -262,6 +262,8 @@ class Robot {
     this.etk = null; this.uzanK = 0; this.etkOlay = false;   // etkilesim (el uzatma)
     this.otoX = null;               // kendiliginden yurunecek hedef
     this.olu = false; this.kilit = false;
+    this.dis = null;                // kancayla cekilme / halkada asili durma: {x, y, vardi}
+    this.jetYakit = 0.85; this.jetAcik = false;      // sirt iticisi (this.jet = var mi)
     this.bastiOlay = null; this.indiOlay = 0;
     this.duvarlar.length = 0;
     this.iskelet = null;
@@ -296,6 +298,22 @@ class Robot {
     this.kayX = damp(this.kayX, 0, 11, dt);
     this.itK = damp(this.itK, this.itiyor ? 1 : 0, 12, dt); this.itiyor = false;
     if (this.merd) { this._tirman(dt, girdi); this._iskeletKur(); return; }
+    if (this.yerde || this.dis) this.jetYakit = Math.min(0.85, this.jetYakit + dt * 1.6);
+    this.jetAcik = false;
+    if (this.dis) {
+      // kanca: halkaya dogru cekilir, varinca asili kalir. Yukari giderken once yukselir, inerken once yana gider (kose kesmesin)
+      const D = this.dis;
+      if (D.t === undefined) { D.t = 0; D.x0 = this.x; D.y0 = this.y; D.sure = Math.max(0.2, Math.sqrt((D.x - this.x) * (D.x - this.x) + (D.y - this.y) * (D.y - this.y)) / 640); }
+      D.t += dt;
+      const k = clamp(D.t / D.sure, 0, 1), ke = 1 - (1 - k) * (1 - k), kg = k * k, yukari = D.y < D.y0;
+      this.x = lerp(D.x0, D.x, yukari ? kg : ke); this.y = lerp(D.y0, D.y, yukari ? ke : kg);
+      if (k >= 1) D.vardi = true;
+      this.vx = 0; this.vy = 0; this.yerde = false; this.sonZeminY = this.y; this.coyoteT = 0; this.tampon = 0;
+      this.egilAcik = false; this.egilK = damp(this.egilK, 0, 13, dt); this.surunK = 0; this.etk = null; this.uzanK = 0;
+      this.ziplaBasili = girdi.zipla;
+      this._ayaklar(dt); this._govde(dt); this._iskeletKur();
+      return;
+    }
 
     let gx = this.kilit ? 0 : girdi.x;
     let zipla = girdi.zipla, eg = !this.kilit && girdi.egil;
@@ -402,6 +420,12 @@ class Robot {
       this.vy = -CFG.ziplaHiz; this.yerde = false; this.tampon = 0; this.coyoteT = 0;
     }
     if (!this.yerde) {
+      // sirt iticisi: havada zipla basili tutulunca yakit bitene kadar yukari iter; duseni frenler
+      if (this.jet && zipla && !this.kilit && this.jetYakit > 0 && this.vy > -310) {
+        this.vy = Math.max(this.vy - 2750 * dt, -300);
+        this.jetYakit -= dt; this.jetAcik = true;
+        if (this.y > this.sonZeminY) this.sonZeminY = this.y;
+      }
       this.vy = Math.min(this.vy + CFG.yercekimi * dt, 1500);
       this.y += this.vy * dt;
       const gy = z.yuk(this.x);
