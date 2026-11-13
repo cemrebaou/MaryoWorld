@@ -166,15 +166,53 @@
     }
   }
 
+  // giris gorseli = yukleme cubugu: siyah ekran %0, gorsel soldan saga acildikca yuzde artar
   function basla() {
-    Sanat.hazirla();
-    boyutla();
-    bolumYukle(1);
-    window.addEventListener('resize', boyutla);
-    window.addEventListener('orientationchange', () => setTimeout(boyutla, 120));
-    document.addEventListener('fullscreenchange', () => setTimeout(boyutla, 120));
-    document.addEventListener('webkitfullscreenchange', () => setTimeout(boyutla, 120));
-    requestAnimationFrame(dongu);
+    const yk = document.getElementById('yukle'), yg = document.getElementById('yukleGorsel'), yy = document.getElementById('yukleYuzde');
+    const adimlar = Sanat.hazirlaAdim();
+    const toplam = (Sanat.hazirlaAdim.toString().match(/yield;/g) || []).length + 1;
+    let biten = 0, bitti = false, gosterilen = 0, son = 0, bekle = 0, hazir = false;
+    const goster = (k) => {
+      const p = (k * 104 - 4).toFixed(2);     // yumusak kenar
+      const m = 'linear-gradient(90deg, #000 ' + p + '%, transparent ' + (+p + 4) + '%)';
+      yg.style.webkitMaskImage = m; yg.style.maskImage = m;
+      yy.textContent = '%' + Math.floor(k * 100);
+    };
+    goster(0);
+    const resim = new Image();
+    resim.onload = resim.onerror = () => { yg.style.backgroundImage = 'url(assets/giris.jpg)'; hazir = true; };
+    resim.src = 'assets/giris.jpg';
+    const kare = (t) => {
+      const dt = son ? Math.min(0.05, (t - son) / 1000) : 0; son = t;
+      if (hazir && !bitti) {
+        const t0 = performance.now();
+        while (performance.now() - t0 < 14) {
+          if (adimlar.next().done) {
+            boyutla(); bolumYukle(1); bitti = true;
+            window.addEventListener('resize', boyutla);
+            window.addEventListener('orientationchange', () => setTimeout(boyutla, 120));
+            document.addEventListener('fullscreenchange', () => setTimeout(boyutla, 120));
+            document.addEventListener('webkitfullscreenchange', () => setTimeout(boyutla, 120));
+            break;
+          }
+          biten++;
+        }
+      }
+      const hedef = bitti ? 1 : (hazir ? Math.min(0.97, biten / toplam) : 0);
+      gosterilen = Math.min(hedef, gosterilen + dt / 1.6);      // en az ~1.6 sn'de dolar, gorsel gorunsun
+      goster(gosterilen);
+      if (bitti && gosterilen >= 1) {
+        bekle += dt;
+        if (bekle > 0.7) {
+          yk.style.opacity = '0';
+          requestAnimationFrame(dongu);
+          setTimeout(() => yk.remove(), 900);
+          return;
+        }
+      }
+      requestAnimationFrame(kare);
+    };
+    requestAnimationFrame(kare);
   }
 
   // tam = true: dugmeler, fisler, sandiklar, kapi da basa doner

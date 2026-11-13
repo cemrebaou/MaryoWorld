@@ -39,6 +39,11 @@
                      color: rgba(214, 228, 236, 0.6); font: 300 14px "Segoe UI", Roboto, Arial, sans-serif; cursor: pointer; padding: 0; touch-action: manipulation; }
   #bolumler button.secili { border-color: rgba(255, 200, 130, 0.9); color: rgba(255, 214, 170, 0.95); background: rgba(255, 190, 110, 0.14); }
   #bolumler button.kilitli { opacity: 0.3; cursor: default; }
+  /* giris gorseli = yukleme ekrani: ustten sabit, alttan kesilir */
+  #yukle { position: absolute; inset: 0; z-index: 20; background: #000; transition: opacity 0.8s ease; }
+  #yukleGorsel { position: absolute; inset: 0; background: #000 center top / cover no-repeat; }
+  #yukleYuzde { position: absolute; right: 3vmin; bottom: 2.5vmin; color: rgba(214, 228, 236, 0.7);
+                font: 300 16px "Segoe UI", Roboto, Arial, sans-serif; letter-spacing: 2px; text-shadow: 0 0 6px #000; }
 </style>
 </head>
 <body>
@@ -50,6 +55,7 @@
   <div class="dugme" id="dEtk"><svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 013 0V11m0-1.5a1.5 1.5 0 013 0V12m0-.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-1a6 6 0 01-5-2.7L5 14.5a1.5 1.5 0 012.5-1.6L9 14.5V11"/></svg></div>
   <div class="dugme" id="dZip"><svg viewBox="0 0 24 24"><path d="M5 15l7-7 7 7"/></svg></div>
   <div id="bolumler"><button>1</button><button>2</button><button>3</button><button>4</button><button>5</button><button>6</button><button>7</button><button>8</button><button>9</button><button>10</button></div>
+  <div id="yukle"><div id="yukleGorsel"></div><div id="yukleYuzde">%0</div></div>
   <div class="dugme" id="dTam"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg></div>
 </div>
 <script src="js/config.js"></script>

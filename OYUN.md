@@ -1,4 +1,4 @@
-# Son Sinyal - oyun notlari (v0.18)
+# Son Sinyal - oyun notlari (v0.19)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -272,4 +272,8 @@ Oyun kodu `game.js` sonundaki `ek2*` fonksiyonlarinda (`ek2Guncelle`, `ek2Once2`
 - GitHub Actions `Android AAB` (her main gonderiminde + elle): cikti Actions calismasinin "Artifacts" bolumunde `son-sinyal-aab-<surum>-<imza>`.
 - Surum kodu = calisma numarasi, surum adi = `config.js` surum.
 - Imza: repo Secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`. Yoksa gecici anahtar kullanilir (artifact adinda `gecici`), Play'e yuklenemez.
-- Ikon: `android-ayar/ikon.py` kodla uretir (`assets/icon-*.png`); CI `@capacitor/assets` ile tum boyutlara cevirir.
+- Ikon: kullanicinin gorseli (`assets/icon-only.png` 1024; adaptif: `icon-foreground.png` = ikon %70 ortada, `icon-background.png` = bulanik). CI `@capacitor/assets` ile tum boyutlara cevirir. Android acilis (splash) duz siyah.
+
+## Yukleme ekrani (v0.19)
+- `www/assets/giris.jpg` (kullanicinin gorseli) yukleme cubugu olarak calisir: ekran siyah = %0, gorsel soldan saga acildikca yuzde artar (sag altta `%NN`). Gorsel ustten sabit, ekrana gore alttan (gerekirse yanlardan) kesilir (`cover`, `center top`).
+- Gercek ilerleme: `Sanat.hazirlaAdim()` uretec; her `yield` bir adim, kare basina ~14 ms calisir. En az ~1.6 sn'de dolar, %100'de 0.7 sn bekler, 0.8 sn'de kararip oyuna gecer.

@@ -18,53 +18,100 @@ const Sanat = {
     });
   },
 
-  hazirla() {
+  hazirla() { for (const _ of this.hazirlaAdim()) { /* adim */ } },
+  // gorselleri adim adim uretir (yukleme cubugu her adimda ilerler)
+  *hazirlaAdim() {
     const r = rngYap(20261112);
+    yield;
     const s = this.s;
+    yield;
     s.gren = this.gurultu(192, r, 1);
+    yield;
     s.sis = this.sisDoku(r);
+    yield;
     s.toprakDoku = this.yeraltiDoku(r);
+    yield;
     s.betonDoku = this.betonDoku(r);
+    yield;
     s.metalDoku = this.metalDoku(r);
+    yield;
     s.lamba = this.lamba(r);
+    yield;
     s.araba = this.araba(r);
+    yield;
     s.kule = this.kule(r);
+    yield;
     s.siper = this.siper(r);
+    yield;
     s.kapi = this.kapi(r);
+    yield;
     s.kapiDisk = this.kapiDisk(r);
+    yield;
     s.presKafa = this.presKafa(r);
+    yield;
     s.dron = this.dron();
+    yield;
     s.diken = this.diken(r);
+    yield;
     s.kutular = {};
+    yield;
     s.presCerceve = this.presCerceve(r);
+    yield;
     s.bariyerCerceve = this.bariyerCerceve(r);
+    yield;
     s.tabla150 = this.tabla(r, 150);
+    yield;
     s.tabla110 = this.tabla(r, 110);
+    yield;
     s.sandik = this.sandik(r);
+    yield;
     s.boruDoku = this.boruDoku(r);
+    yield;
     s.kalasDoku = this.kalasDoku(r);
+    yield;
     s.hucre = this.hucre(r);
+    yield;
     s.cihaz = this.cihaz(r);
+    yield;
     s.kaide = this.kaide(r);
+    yield;
     s.icDuvar = this.icDuvar(r);
+    yield;
     s.tlamba = this.tlamba(r);
+    yield;
     s.golge = this.golge(r);
+    yield;
     s.dortayak = this.dortayak(r, false);
+    yield;
     s.dortayakZ = this.dortayak(r, true);
+    yield;
     s.paletli = this.paletli(r);
+    yield;
     s.omuz = this.omuz(r);
+    yield;
     s.sigorta = this.sigorta(r);
+    yield;
     const r2 = rngYap(31337);      // sonradan eklenenler: ayri tohum (eski gorsellerin dokusu degismesin)
-    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan', 'uzuv', 'hover', 'kafes', 'mayin', 'bekci', 'testere', 'kus', 'miknatis', 'yem', 'agir']) s[ad] = this[ad](r2);
+    yield;
+    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan', 'uzuv', 'hover', 'kafes', 'mayin', 'bekci', 'testere', 'kus', 'miknatis', 'yem', 'agir']) { s[ad] = this[ad](r2); yield; }
+    yield;
     s.oda = null;      // bitis odasi: ilk gerektiginde uretilir (odaAl)
+    yield;
     s.agaclar = {};
+    yield;
     // arka plan parcalari (3 derinlik)
     s.binaUzak = []; s.binaOrta = []; s.yakinlar = [];
+    yield;
     for (let i = 0; i < 7; i++) s.binaUzak.push(this.bina(r, r.ar(70, 170), r.ar(120, 330), '#1b2a33', '#22343f'));
+    yield;
     for (let i = 0; i < 7; i++) s.binaOrta.push(this.bina(r, r.ar(120, 260), r.ar(140, 380), '#111c23', '#182832'));
+    yield;
     for (let i = 0; i < 4; i++) s.yakinlar.push(this.agacSil(rngYap(100 + i), r.ar(300, 420), '#0a1318', 5));
+    yield;
     s.direk = this.direk('#0a1318');
+    yield;
     s.cit = this.cit('#0a1318');
+    yield;
     // on plan (bulanik siluetler)
     s.on = [
       bulanik(this.agacSil(rngYap(7), 760, '#020406', 13, false, 0.66, 1), 7),
@@ -73,7 +120,9 @@ const Sanat = {
       bulanik(this.onCali(rngYap(10), 300, 110), 5),
       bulanik(this.onKablo(rngYap(4)), 6)
     ];
+    yield;
     s.damla = this.damla();
+    yield;
   },
 
   // etkilesim kutusu (dugme, priz, salter, yuva): el yuksekligine gore direkli kutu
