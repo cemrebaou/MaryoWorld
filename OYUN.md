@@ -1,4 +1,4 @@
-# MaryoWorld - oyun notlari (v0.09)
+# MaryoWorld - oyun notlari (v0.10)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -162,3 +162,42 @@ Oyun `SES.cal(ad, siddet)` ile calar (game.js `ses()` uzakliga gore kisar).
 | kalas / sandik / basamak | kalas kirilinca, sandik itilmeye baslaninca, dik merdivende her basamak | knock/wood, knock/desk, tap/knuckle |
 | elektrik | yakindaki birikinti elektriklenince | pro_glitch/crunchy |
 | el / sev / buldum | dokunma cumlesi, gizli oksama, bitis | hover_tick/ping, shimmer/m1, logo_sting/reverse_bloom |
+
+## Bolum sistemi (v0.10)
+- Toplam 5 bolum planli (`BOLUM_SAYI`), hazir olan 2 (`BOLUM_HAZIR`). `level.js`: `kurucu()` ortak yardimcilari verir,
+  her bolum kendi fonksiyonu (`bolum1`, `bolum2`), `bolumKur(no)` secer. Yeni bolum: `bolumN()` yaz, `bolumKur`a ekle, `BOLUM_HAZIR` artir.
+- `game.js` `bolumYukle(no)`: bolumu kurar, robotu basa koyar, yetenekleri sifirlar. Bolum sonu kapisi: odasi varsa (`B.oda`) bitis
+  sahnesine, yoksa sonraki bolume gecer. Bitis odasi simdilik 2. bolumun sonunda; yeni bolum geldikce en sona tasinir.
+- Ustte ortada 1-5 dugmeleri (`#bolumler`): dokununca o bolum aninda acilir; hazir olmayanlar soluk (`kilitli`).
+- Yasam sinyali yuzdesi 5 bolume yayilir: `(bolumNo - 1 + bolumdeki ilerleme) / 5`.
+- Her bolumun kendi yetenegi olur. 1: egil / surun / tirman / it. 2: omuz lazeri.
+
+## Bolum 2 - ALT KATLAR (ic mekan, oynanan kisim 42790 px)
+- Tema `B.tema.ic`: gok ve yagmur yok, karanlik maskesi cok koyu; yalnizca isigin vurdugu yer gorunur
+  (robotun feneri, tavan lambalari `tlamba`, dusman isiklari).
+- Omuz lazeri: bolumun basinda `etki(..., { verir: 'lazer' })` ile alinir (`yet.lazer`), omuza takilir.
+  Ekranda dokunulan yere ates eder (`lazerAt`); hedefler `nisan` (halat, sigorta, dusman hucresi).
+- Dusmanlar (`B.dusmanlar`):
+  - `golge`: isiga gelemez. Robot ona bakarken (fener ustundeyken) ya da lamba altindayken durur; sirt donunce arkadan gelir.
+  - `dortayak`: dort ayakli bekci. Onden gecilmez; arkasina gecip sirtindaki hucre vurulur. `zirhli` olana lazer islemez:
+    elektrik izgarasina cekilir, salterle elektrik verilir, sonra salter kapatilip gecilir.
+  - `paletli`: tank paletli agir tasiyici. Ustune binilir, robotu tasir; elektrik izgarasindan etkilenmez.
+- Yeni parcalar: `tlamba` (sigortasi vurulunca yanan tavan lambasi), `asili` (halati vurulunca dusen sandik),
+  `kopru` (sigortayla uzayan kopru), `elektrik` izgarasi (`izgara`, salterle `cevir`), bolum sonu kapisi uc sigorta ister.
+
+## Olum sahneleri (v0.10)
+`oldur(tip)` / `geriAl(neden, tip, y)`; sahne ~1 sn oynar, sonra son kontrol noktasina donulur.
+- `ezik`: pres robotu hurda presi gibi ezer (govde yassilir, kivilcim). - `lazer`: temas cizgisinden kesilir, kesik kizarir.
+- `elektrik`: titreme + ark. - `diken`: saplanir. Dusme ve yakalanma eskisi gibi.
+- Lazer artik butun govdeye bakar (el, kafa, ayak dahil). Yanip sonen lazerlerin araligi uzadi (`periyot + 2.1`, acik kalma `oran 0.28`)
+  ama gecis hala ucu ucuna.
+
+## v0.10 diger degisiklikler
+- Dokunmatik dugmeler ~2 kat (`--d: min(22vmin, 124px)`), hepsi altta tek sira; zemin kusaginin ustune tasmaz.
+- Egikken zipla: ziplamaz, once ayaga kalkar.
+- Itme durusu: ayaklar sandiga degmez (`duvarlar` ile mesafe), bel hafif kirik, eller sandigin yakin ust kosesinde.
+- Egik / surunme: kafa one bakar. Guc hucresi: el uzanir, tutar, sirta takar.
+- Kalp ve goz isigi siperlerin arkasindan gorunmez (`siperKirp`); fener huzmesi kalir.
+- Isik renkleri: sokak lambasi sari / kehribar, robot soguk beyaz-mavi, dusman kirmizi.
+- Sesler: yagmur 0.62, adim 0.40, pres 0.81, basamak 0.16 (yeni, yumusak ornek); yeni `fx_lazer`, `fx_vur`.
+

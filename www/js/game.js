@@ -28,8 +28,13 @@
   let icerde = false;                              // kasanin icindeki oda
   const F = { faz: 0, t: 0, temas: 0, elde: false, soz: {}, ex: 0, ey: 0, px: 0, py: 0, beyaz: 0 };
   let video = null, kamDurum = 'yok';              // yok | istek | var | red
-  const isaret = { bas: false, x: 0, y: 0, yeni: false, sonAsagi: -9 };
+  const isaret = { bas: false, x: 0, y: 0, yeni: false, kullanildi: false, sonAsagi: -9 };
   const sev = { t: 0, bekle: 0, sira: 0, elSira: 0 };       // gizli oksama + dokunma cumleleri    // parmak / fare (mantiksal ekran koordinati)
+  let bolumNo = 1, acT = 9;                                 // hangi bolum; bolum acilis karartmasi
+  const yet = { lazer: false };                             // kazanilan yetenekler
+  const lz = { sog: 0, t: 9, x0: 0, y0: 0, x1: 0, y1: 0, ax: 1, ay: 0 };   // omuz lazeri
+  const olm = { tip: '', y: 0 };                            // son olumun turu (sahnesi icin)
+  let kiv = [], tasT = 9, tasX = 0, tasY = 0, itilen = null;
   let katman = [], onPlan = [], yagmur = [], toz = [], sicrama = [];
   const girdi = { x: 0, zipla: false, egil: false, etk: false };
   const tus = {};
@@ -163,16 +168,8 @@
 
   function basla() {
     Sanat.hazirla();
-    B = bolumKur(); Z = B.zemin;
-    robot = new Robot(Z);
-    robot.merdivenler = B.tirmanma;
-    robot.alcaklar = B.alcaklar;
-    // siperin icinde kalan etkilesim kutulari siperin onunde cizilir (yoksa gorunmez)
-    for (const e of B.etkiler) for (const s of B.siperler) if (Math.abs(e.x - s.x) < 70) e.onde = true;
     boyutla();
-    katmanKur();
-    for (const o of B.nesneler) if (o.tip === 'lamba') o.guc = 1;
-    yenidenBasla();
+    bolumYukle(1);
     window.addEventListener('resize', boyutla);
     window.addEventListener('orientationchange', () => setTimeout(boyutla, 120));
     document.addEventListener('fullscreenchange', () => setTimeout(boyutla, 120));
@@ -184,17 +181,27 @@
   function tehlikeSifirla(tam) {
     alarm = 0;
     for (const g of B.gozculer) g.t = 0;
+    for (const d of B.dusmanlar) {
+      if (tam) d.olu = false;
+      if (!d.olu) { d.x = d.bas; d.yon = d.yon0; d.uyanik = false; d.kosT = 0; d.isikT = 0; d.yanT = 0; d.bekle = 0; d.isik = false; }
+    }
     for (const p of B.platformlar) { p.t = 0; p.e.x0 = p.c0; p.e.x1 = p.c0 + p.w; }
     for (const k of B.kalaslar) { k.t = -1; k.dy = 0; k.vy = 0; k.e.aktif = true; }
     for (const a of B.asansorler) { a.t = 0; a.k = 0; a.ust = a.yAlt; }
     if (tam) {
-      const hepsi = [B.gozculer, B.presler, B.lazerler, B.elektrik, B.bariyerler, B.asansorler];
+      const hepsi = [B.gozculer, B.presler, B.lazerler, B.elektrik, B.bariyerler, B.asansorler, B.lambalar, B.kopruler];
       for (const liste of hepsi) for (const o of liste) { o.kapali = !!o.kapali0; o.kalici = false; }
       for (const g of B.gozculer) { g.in = 0; g.guc = g.kapali ? 0 : 1; }
       for (const e of B.etkiler) { e.yapildi = false; e.t = 0; e.kalan = 0; e.redT = 9; }
       for (const s of B.sandiklar) { s.x0 = s.bas; s.x1 = s.bas + s.w; }
       for (const d of B.dusunceler) d.oldu = false;
       kapiAc = false; kapiAcik = 0; tasinan = null; dsn = null;
+      for (const n of B.nisanlar) { n.yapildi = false; n.t = 9; }
+      for (const p of B.paletliler) { p.x0 = p.bas; p.x1 = p.bas + p.w; p.yon = p.yon0; p.bekle = 1.2; }
+      for (const a of B.asililar) {
+        if (a.s) { Z.bloklar.splice(Z.bloklar.indexOf(a.s), 1); B.sandiklar.splice(B.sandiklar.indexOf(a.s), 1); a.s = null; }
+        a.durum = 0; a.y = a.y0; a.vy = 0;
+      }
     }
   }
 
@@ -203,14 +210,19 @@
     icerde = false; kameraSinir();
     F.faz = 0; F.t = 0; F.temas = 0; F.elde = false; F.soz = {}; F.beyaz = 0;
     kontrolX = B.baslaX;
+    yet.lazer = bolumNo > 2;                 // onceki bolumlerde kazanilan yetenekler
+    lz.t = 9; lz.sog = 0; kiv.length = 0; tasT = 9; itilen = null; acT = 9; olm.tip = '';
     tehlikeSifirla(true);
     robot.minX = 40; robot.maxX = B.oyunSonX - 60;
     if (dbgX !== null) {
       robot.sifirla(dbgX); kontrolX = dbgX; durum = 'oyun'; karart = 0;
+    } else if (bolumNo > 1) {
+      robot.sifirla(B.baslaX); durum = 'oyun'; karart = 1; acT = 0;      // sonraki bolumler: dogrudan baslar
     } else {
       robot.sifirla(B.baslaX); robot.cokme = 1; robot.kilit = true; durum = 'giris'; karart = 1;
     }
     dZaman = 0; girisT = dbgX !== null ? 99 : 0;
+    robot.kilit = durum === 'giris';
     cam.x = clamp(robot.x - W * 0.42, camMin, camMax); cam.y = robot.y - H * 0.70;
   }
 
@@ -315,17 +327,33 @@
       const dy = a.ust - eski;
       if (dy !== 0 && robot.yerde && robot.x >= a.x0 - 1 && robot.x <= a.x1 + 1 && Math.abs(robot.y - eski) < 4) robot.tasi(0, dy);
     }
-    // sandik: yanina dayanip yurununce itilir
+    // paletli tasiyicilar: iki uc arasinda gidip gelir; ustundeki robotu tasir, onundekini iter
+    for (const p of B.paletliler) {
+      const eski = p.x0;
+      p.bekle -= dt;
+      if (p.bekle <= 0 && durum !== 'geri') {
+        let nx = p.x0 + p.yon * p.hiz * dt;
+        if (nx < p.a0) { nx = p.a0; p.yon = 1; p.bekle = 1.6; } else if (nx > p.a1 - p.w) { nx = p.a1 - p.w; p.yon = -1; p.bekle = 1.6; }
+        p.x0 = nx; p.x1 = nx + p.w;
+      }
+      const dx = p.x0 - eski;
+      if (robot.yerde && Math.abs(robot.y - p.ust) < 3 && robot.x >= eski - 2 && robot.x <= eski + p.w + 2) { if (dx) robot.tasi(dx, 0); }
+      else if (Math.abs(robot.y - p.taban) < 20 && robot.x > p.x0 - 12 && robot.x < p.x1 + 12) robot.x = robot.x < (p.x0 + p.x1) / 2 ? p.x0 - 12 : p.x1 + 12;
+    }
+    // sandik: bir adim geride durup ellerini ust kosesine dayayarak iter (ayaklar sandiga degmez)
     const d = (durum === 'oyun' && robot.yerde && !robot.merd && !robot.etk && robot.surunK < 0.3) ? girdi.x : 0;
+    itilen = null;
     for (const s of B.sandiklar) {
-      if (!d || Math.abs(robot.y - s.taban) > 3) continue;
+      const ayni = Math.abs(robot.y - s.taban) < 3;
+      if (ayni && robot.yerde) robot.duvarlar.push(s.x0 - 34, s.x1 + 34);       // sandiga 34 px'ten fazla yaklasamaz
+      if (!d || !ayni) continue;
       const ara = d > 0 ? s.x0 - robot.x : robot.x - s.x1;
-      if (ara < 0 || ara > 17) continue;
+      if (ara < 6 || ara > 44) continue;
       // acik olmayan bariyerden sandik da gecemez (araya robotun sigacagi bosluk kalir)
       let lo = s.min, hi = s.max - s.w;
       for (const b of B.bariyerler) {
         if (b.kapali || Math.abs(b.y - s.taban) > 3) continue;
-        if (s.x1 <= b.x) hi = Math.min(hi, b.x - 92 - s.w); else lo = Math.max(lo, b.x + 92);
+        if (s.x1 <= b.x) hi = Math.min(hi, b.x - 120 - s.w); else lo = Math.max(lo, b.x + 120);
       }
       const nx0 = clamp(s.x0 + d * CFG.itmeHiz * dt, Math.min(lo, s.x0), Math.max(hi, s.x0));
       robot.x += nx0 - s.x0;                         // robot sandikla birlikte ilerler (ayaklar adim atarak gelir)
@@ -333,6 +361,7 @@
       if (zaman - (s.sesT || -9) > 0.6) ses('sandik');     // itmeye baslarken tok bir ses
       s.sesT = zaman;
       robot.itiyor = true;
+      itilen = { x: d > 0 ? s.x0 : s.x1, y: s.ust };
     }
     // plaka: ustunde robot ya da sandik varken hedefleri kapatir (dugmeyle kilitlenmis olanlar acik kalir)
     for (const p of B.plakalar) {
@@ -372,7 +401,7 @@
 
   function tehlikeGuncelle(dt) {
     const rx = robot.x, ry = robot.y, boy = robot.boyAl();
-    let olum = null;
+    let olum = null, otip = '', oy = 0;
     robot.duvarlar.length = 0;
 
     // presler
@@ -388,7 +417,7 @@
       p.alt = p.y - lerp(p.acik, 0, k);
       const dx = Math.abs(rx - p.x);
       if (p.y - p.alt < boy + 4 && Math.abs(ry - p.y) < 70) {
-        if (dx < p.w / 2 - 6) olum = 'hasar';                                   // altinda kaldi
+        if (dx < p.w / 2 - 6) { olum = 'hasar'; otip = 'ezik'; }                                // altinda kaldi
         else {
           if (dx < p.w / 2 + 10) robot.x = p.x + (rx < p.x ? -1 : 1) * (p.w / 2 + 10);   // kenardaysa disari it
           robot.duvarlar.push(p.x - p.w / 2 - 10, p.x + p.w / 2 + 10);
@@ -411,20 +440,23 @@
       else { const f = devir(e); e.acik = f < 0.5; e.yakinda = f > 0.86; }
       if (e.acik && !e.sesAcik) ses('elektrik', (e.x0 + e.x1) / 2, Math.abs((e.x0 + e.x1) / 2 - rx) < 520 ? 1 : 0);
       e.sesAcik = e.acik;
-      if (e.acik && robot.yerde && rx > e.x0 + 6 && rx < e.x1 - 6 && Math.abs(ry - e.y) < 12) olum = 'hasar';
+      if (e.acik && robot.yerde && rx > e.x0 + 6 && rx < e.x1 - 6 && Math.abs(ry - e.y) < 12) { olum = 'hasar'; otip = 'elektrik'; }
     }
     // lazerler: ust = egilerek, surun = surunerek, alt = ziplayarak (ya da sonukken) gecilir
     for (const l of B.lazerler) {
       const f = l.periyot ? devir(l) : 0;
-      l.acik = !l.kapali && (!l.periyot || f < 0.4);
+      l.acik = !l.kapali && (!l.periyot || f < (l.oran || 0.4));
       l.yakinda = !l.kapali && l.periyot > 0 && f > 0.88;
-      if (!l.acik || rx < l.x0 - 6 || rx > l.x1 + 6) continue;
+      // govdenin tamami sayilir: surunurken eller onde, ayaklar arkada
+      const onU = robot.surunK > 0.5 ? 96 : 16, arkaU = robot.surunK > 0.5 ? 52 : 16;
+      const bx0 = rx - (robot.yon > 0 ? arkaU : onU), bx1 = rx + (robot.yon > 0 ? onU : arkaU);
+      if (!l.acik || bx1 < l.x0 || bx0 > l.x1) continue;
       const by = l.y - l.h;
-      if (l.ust) { if (ry - boy < by - 4 && ry > by) olum = 'yakalandi'; }
-      else if (ry > by - 2 && ry < l.y + 40) olum = 'yakalandi';
+      if (l.ust) { if (ry - boy < by - 4 && ry > by) { olum = 'yakalandi'; otip = 'lazer'; oy = by; } }
+      else if (ry > by - 2 && ry < l.y + 40) { olum = 'yakalandi'; otip = 'lazer'; oy = by; }
     }
     // sivri demirler
-    for (const d of B.dikenler) if (rx > d.x0 + 8 && rx < d.x1 - 8 && ry > d.y - 10 && ry < d.y + 40) olum = 'hasar';
+    for (const d of B.dikenler) if (rx > d.x0 + 8 && rx < d.x1 - 8 && ry > d.y - 10 && ry < d.y + 40) { olum = 'hasar'; otip = 'diken'; }
     // curuk kalaslar
     for (const k of B.kalaslar) {
       if (k.t < 0) {
@@ -439,7 +471,7 @@
         if (k.t > CFG.kalasSure + 5 && (rx < k.x0 - 260 || rx > k.x1 + 260)) { k.t = -1; k.dy = 0; k.vy = 0; k.e.aktif = true; }
       }
     }
-    if (olum && durum === 'oyun') geriAl(olum);
+    if (olum && durum === 'oyun') geriAl(olum, otip, oy);
   }
 
   // etkilesim: menzile girince tus aktif olur (ya da noktaya dokunulur); robot yerine gecip elini tam hedefe goturur
@@ -464,6 +496,7 @@
         if (Math.abs(wx - e.x) < 46 && wy > e.y - e.h - 60 && wy < e.y + 10) sec = e;
       }
     }
+    if (sec && isaret.yeni) isaret.kullanildi = true;
     const dokunuldu = !!sec && sec !== etkYakin || (!!sec && isaret.yeni && !(girdi.etk && !etkOnceki));
     if (sec && !robot.etk && robot.etkBasla(sec.x, sec.y - sec.h, sec.egil)) { etkSecili = sec; sec.dokun = dokunuldu; }
     etkOnceki = girdi.etk;
@@ -480,10 +513,12 @@
         ses(e.tip === 'dugme' ? 'dugme' : (e.tip === 'salter' ? 'salter' : (e.tip === 'kablo' ? 'fis' : 'hucre')));
         if (e.kapi) ses('kapi'); else if (e.ac) ses('guc'); else if (e.hedef.length) ses('bariyer');
         if (e.gerek) tasinan = null;
-        if (e.verir) tasinan = e.verir;
+        if (e.verir === 'lazer') yet.lazer = true;
+        else if (e.verir) { tasinan = e.verir; tasT = 0; tasX = e.x; tasY = e.y - e.h; }     // once elde tutar, sonra sirtina takar
         for (const h of e.hedef) { h.kapali = true; if (!e.sure) h.kalici = true; }
         if (e.ac) for (const h of e.ac) h.kapali = false;
         if (e.sure) e.kalan = e.sure;
+        if (e.cevir) { for (const h of e.cevir) h.kapali = !h.kapali; e.konum = !e.konum; e.yapildi = false; }     // ac / kapa salteri
         if (e.kapi) kapiAc = true;
         if (e.hat) dusun(B.hatlar.every((h) => h.yapildi) ? 'dHat2' : 'dHat1');
         else if (e.dusun) dusun(e.dusun);
@@ -593,28 +628,34 @@
       robot.kilit = dZaman < 3.3;
       if (dZaman > 3.6) { durum = 'oyun'; robot.cokme = 0; }
     } else if (durum === 'geri') {
-      // karar, yerine koy, ac
-      if (dZaman < 0.55) karart = smooth(dZaman / 0.5);
-      else {
+      // olum sahnesi, karar, yerine koy, ac
+      const bk = olm.tip === 'dustu' ? 0 : 1.0;
+      if (dZaman < bk + 0.55) {
+        karart = smooth((dZaman - bk) / 0.5);
+        if (olm.tip !== 'dustu' && olm.tip !== 'ezik' && olm.tip !== 'lazer') robot.cokme = smooth(dZaman / 0.45);     // dizlerinin ustune coker
+      } else {
         if (!robot._yerlesti) {
           robot.sifirla(kontrolX); robot._yerlesti = true;
           tehlikeSifirla(false);
           cam.x = clamp(robot.x - W * 0.42, camMin, camMax); cam.y = robot.y - H * 0.70;
         }
-        karart = 1 - smooth((dZaman - 0.75) / 0.7);
-        if (dZaman > 1.5) { durum = 'oyun'; karart = 0; }
+        karart = 1 - smooth((dZaman - bk - 0.75) / 0.7);
+        if (dZaman > bk + 1.5) { durum = 'oyun'; karart = 0; }
       }
       robot.kilit = durum !== 'oyun';
     } else if (durum === 'kapida') {
       robot.kilit = true;
       karart = smooth((dZaman - 1.2) / 1.8);
-      if (dZaman > 3.3) iceriGec();
+      if (dZaman > 3.3) { if (B.oda) iceriGec(); else bolumYukle(Math.min(bolumNo + 1, BOLUM_HAZIR)); }
     }
     if (durum === 'final') finalGuncelle(dt);
+    if (durum === 'oyun' && acT < 1.6) { acT += dt; karart = 1 - smooth(acT / 1.4); }
 
     platformGuncelle(dt);
     blokGuncelle(dt);
-    robot.guncelle(dt, girdi);
+    elleriAyarla();
+    // ezilme ve lazerle kesilmede robot oldugu yerde kalir (sahnesi oynar)
+    if (!(durum === 'geri' && !robot._yerlesti && (olm.tip === 'ezik' || olm.tip === 'lazer'))) robot.guncelle(dt, girdi);
 
     if (durum === 'oyun') {
       // kontrol noktasi
@@ -626,9 +667,12 @@
       gozcuGuncelle(dt);
       tehlikeGuncelle(dt);
       etkiGuncelle(dt);
+      dusmanGuncelle(dt);
+      lazerAt(dt);
     }
     sevGuncelle(dt);
-    isaret.yeni = false;
+    tasT += dt;
+    isaret.yeni = false; isaret.kullanildi = false;
     sars = damp(sars, 0, 9, dt);
 
     // lamba titremesi
@@ -666,17 +710,21 @@
       if (d.y > H + 30) { d.y = -40 - Math.random() * 60; d.x = Math.random() * (W + 300); }
       if (d.x < -40) d.x += W + 340; else if (d.x > W + 300) d.x -= W + 340;
     }
-    if (!icerde && Math.random() < dt * 46) {
+    if (!icerde && !B.tema.ic && Math.random() < dt * 46) {
       const wx = cam.x + Math.random() * W, wy = Z.yukZemin(wx);
       if (wy < CUKUR) sicrama.push({ x: wx, y: wy, o: 0 });
     }
     for (let i = sicrama.length - 1; i >= 0; i--) { sicrama[i].o += dt; if (sicrama[i].o > 0.26) sicrama.splice(i, 1); }
   }
 
-  function geriAl(neden) {
+  // neden: 'yakalandi' | 'hasar' | 'dustu' (yazi ve ses). tip: olum sahnesi (ezik, lazer, elektrik, diken, golge, dortayak...)
+  function geriAl(neden, tip, y) {
     if (durum !== 'oyun') return;
+    olm.tip = tip || neden; olm.y = y || 0;
     ses(neden === 'yakalandi' ? 'alarm' : (neden === 'hasar' ? 'hasar' : 'dustu'));
     durum = 'geri'; dZaman = 0; geriNeden = neden; robot._yerlesti = false; robot.kilit = true;
+    if (olm.tip !== 'dustu') kivEkle(robot.x, robot.y - (olm.tip === 'ezik' ? 20 : 80), olm.tip === 'yakalandi' ? 0 : 16);
+    if (olm.tip === 'ezik') sars = Math.max(sars, 6);
   }
 
   // ---------- cizim yardimcilari ----------
@@ -897,7 +945,13 @@
     const s = Sanat.s, sol = cam.x - 260, sag = cam.x + W + 260;
     for (const e of B.etkiler) {
       if (e.x < sol || e.x > sag || !!e.onde !== onde || !gorunur(e)) continue;
-      const ty = e.y - e.h, ku = Sanat.kutuAl(e.h);
+      const ty = e.y - e.h;
+      if (e.tip === 'silah') {      // kaidenin ustunde duran omuz lazeri
+        bas(gx, s.kaide, e.x - s.kaide.kokX, e.y - s.kaide.lh + 2);
+        if (!e.yapildi) bas(gx, s.omuz, e.x - 15, ty + 2);
+        continue;
+      }
+      const ku = Sanat.kutuAl(e.h);
       bas(gx, ku, e.x - ku.kokX, ty - ku.elY);
       if (e.tip === 'dugme') {
         const basili = e.yapildi && e.t < 0.3;
@@ -906,7 +960,7 @@
         gx.fillStyle = 'rgba(255,255,255,0.14)'; gx.beginPath(); gx.arc(e.x - 1.6, ty - 1.8, 2, 0, 6.283); gx.fill();
       } else if (e.tip === 'salter') {
         // salter kolu: kapaliyken yukari, acilinca asagi
-        const k = e.yapildi ? smooth(e.t / 0.2) : 0, ac = lerp(-0.9, 0.9, k);
+        const k = e.cevir ? (e.konum ? 1 : 0) : (e.yapildi ? smooth(e.t / 0.2) : 0), ac = lerp(-0.9, 0.9, k);
         gx.fillStyle = '#0a0c0e'; gx.fillRect(e.x - 2, ty - 8, 4, 16);
         gx.strokeStyle = '#8c979e'; gx.lineWidth = 3; gx.lineCap = 'round';
         gx.beginPath(); gx.moveTo(e.x, ty); gx.lineTo(e.x - e.s * Math.cos(ac) * 11, ty + Math.sin(ac) * 11); gx.stroke();
@@ -938,10 +992,14 @@
     for (const a of B.alcaklar) {
       if (a.x1 < sol - 60 || a.x0 > sag + 60) continue;
       if (a.tip === 'boru') {
-        const ust = a.y - 178, bx = a.x0 - 26, bw = a.x1 - a.x0 + 52;
-        gx.fillStyle = betonDesen || '#1b2023';
-        gx.fillRect(a.x0 - 16, a.y - 116, 14, 116); gx.fillRect(a.x1 + 2, a.y - 116, 14, 116);
-        gx.fillStyle = 'rgba(2,4,6,0.5)'; gx.fillRect(a.x0 - 16, a.y - 116, 14, 116); gx.fillRect(a.x1 + 2, a.y - 116, 14, 116);
+        const ust = a.y - 178 - (a.kot || 0), bx = a.x0 - 26, bw = a.x1 - a.x0 + 52;
+        if (a.kot) {      // yuksek boru: tavandan askili
+          gx.fillStyle = '#12161a'; gx.fillRect(a.x0 - 10, ust - 700, 6, 700); gx.fillRect(a.x1 + 4, ust - 700, 6, 700);
+        } else {
+          gx.fillStyle = betonDesen || '#1b2023';
+          gx.fillRect(a.x0 - 16, a.y - 116, 14, 116); gx.fillRect(a.x1 + 2, a.y - 116, 14, 116);
+          gx.fillStyle = 'rgba(2,4,6,0.5)'; gx.fillRect(a.x0 - 16, a.y - 116, 14, 116); gx.fillRect(a.x1 + 2, a.y - 116, 14, 116);
+        }
         serit(s.boruDoku, bx, ust, bw);
         gx.fillStyle = '#20262a';
         for (let i = 0; i <= 3; i++) gx.fillRect(bx + bw * i / 3 - 4, ust - 4, 8, 74);
@@ -1030,6 +1088,13 @@
     // elektrik: egik direk, sarkan kablo, su birikintisi
     for (const e of B.elektrik) {
       if (e.x1 < sol || e.x0 > sag) continue;
+      if (e.izgara) {      // zemine gomulu elektrik izgarasi
+        gx.fillStyle = '#0d1114'; gx.fillRect(e.x0, e.y - 3, e.x1 - e.x0, 6);
+        gx.fillStyle = 'rgba(120,135,142,0.55)';
+        for (let xx = e.x0 + 4; xx < e.x1 - 4; xx += 12) gx.fillRect(xx, e.y - 3, 5, 2);
+        gx.fillStyle = 'rgba(196,160,52,0.6)'; gx.fillRect(e.x0 - 10, e.y - 4, 10, 5); gx.fillRect(e.x1, e.y - 4, 10, 5);
+        continue;
+      }
       const mrk = (e.x0 + e.x1) / 2, w = e.x1 - e.x0, dxp = e.x0 - 46, sal = e.sal || 0;
       gx.lineCap = 'butt';
       gx.strokeStyle = '#161b1e'; gx.lineWidth = 7;
@@ -1122,6 +1187,8 @@
       if (!F.elde) bas(gx, s.cihaz, O.kaideX - s.cihaz.kokX, O.y - 86 - s.cihaz.kokY + 2);
     }
 
+    dusmanCiz();
+
     // dronlar
     for (const g of B.gozculer) {
       if (g.tip !== 'dron' || g.kx < sol || g.kx > sag) continue;
@@ -1155,8 +1222,8 @@
     }
     if (tasinan === 'pil') {
       // sirtta tasinir
-      const bx = K.hx + K.sx * 30 + K.sy * K.f * 19, by = K.hy + K.sy * 30 - K.sx * K.f * 19;
-      gx.save(); gx.translate(bx, by); gx.rotate(Math.atan2(K.sy, K.sx) + 1.5708);
+      const pn = pilNokta();
+      gx.save(); gx.translate(pn.x, pn.y); gx.rotate(Math.atan2(K.sy, K.sx) + 1.5708);
       bas(gx, s.hucre, -s.hucre.kokX, -s.hucre.kokY);
       gx.restore();
     }
@@ -1252,6 +1319,7 @@
 
     // --- gok ve arka katmanlar (odada yok) ---
     if (icerde) { ctx.fillStyle = '#020405'; ctx.fillRect(0, 0, W, H); }
+    else if (B.tema.ic) icArka();
     else {
       if (Sanat.foto.uzak) {
         const im = Sanat.foto.uzak, o = (H * 1.12) / im.height, iw = im.width * o;
@@ -1284,17 +1352,17 @@
     }
     const pRenk = '235,' + Math.round(lerp(244, 70, uyari)) + ',' + Math.round(lerp(255, 60, uyari));
     const solE = cam.x - 200, sagE = cam.x + W + 200;
-    const O = B.oda, odaLx = O.kaideX - cam.x, odaLy = O.y - 430 - cam.y, odaYer = O.y - cam.y;
+    const O = B.oda || { kaideX: 0, y: 0 }, odaLx = O.kaideX - cam.x, odaLy = O.y - 430 - cam.y, odaYer = O.y - cam.y;
 
     // --- isik huzmeleri (oyun katmaninin arkasinda) ---
     ctx.globalCompositeOperation = 'lighter';
     for (const l of L) {
       if (l.tip === 'lamba') {
         const g = ctx.createLinearGradient(0, l.y, 0, l.yer);
-        g.addColorStop(0, 'rgba(190,222,236,' + 0.30 * l.guc + ')'); g.addColorStop(1, 'rgba(190,222,236,0)');
+        g.addColorStop(0, 'rgba(255,200,120,' + 0.30 * l.guc + ')'); g.addColorStop(1, 'rgba(255,200,120,0)');
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.moveTo(l.x - 10, l.y); ctx.lineTo(l.x + 10, l.y); ctx.lineTo(l.x + 150, l.yer); ctx.lineTo(l.x - 150, l.yer); ctx.closePath(); ctx.fill();
-        isin(ctx, l.x, l.y, 190, '170,210,228', 0.34 * l.guc);
+        isin(ctx, l.x, l.y, 190, '255,190,110', 0.34 * l.guc);
       } else isin(ctx, l.x, l.y, 380, '255,176,96', 0.42 * l.guc);
     }
     for (const z of GZ) {
@@ -1322,7 +1390,7 @@
       gx.fillStyle = 'rgba(0,0,0,0.42)';
       gx.beginPath(); gx.ellipse(robot.x + robot.yon * 26 * robot.surunK, robot.y + 2, 30 + 34 * robot.surunK, 4.5, Z.egim(robot.x, 14), 0, 6.283); gx.fill();
     }
-    robot.ciz(gx);
+    robotCiz();
     // toz
     for (const t of toz) {
       gx.fillStyle = 'rgba(150,150,140,' + 0.22 * (1 - t.o / t.s) + ')';
@@ -1336,7 +1404,7 @@
     mx.setTransform(MS, 0, 0, MS, 0, 0);
     mx.globalCompositeOperation = 'source-over';
     mx.clearRect(0, 0, W, H);
-    mx.fillStyle = icerde ? 'rgba(2,4,7,0.88)' : 'rgba(3,7,11,0.80)'; mx.fillRect(0, 0, W, H);
+    mx.fillStyle = icerde ? 'rgba(2,4,7,0.88)' : (B.tema.ic ? 'rgba(2,4,7,0.93)' : 'rgba(3,7,11,0.80)'); mx.fillRect(0, 0, W, H);
     mx.globalCompositeOperation = 'destination-out';
     for (const l of L) {
       if (l.tip === 'lamba') { isin(mx, l.x, l.yer - 60, 250, '0,0,0', 0.95 * l.guc); isin(mx, l.x, l.y, 120, '0,0,0', 0.8 * l.guc); }
@@ -1346,6 +1414,10 @@
     const rx = robot.x - cam.x, ry = K.hy - cam.y;
     isin(mx, rx, ry - 14, 120, '0,0,0', 0.5);
     isin(mx, K.gozX - cam.x + K.f * 96, K.gozY - cam.y + 26, 190, '0,0,0', 0.62 * gozA);
+    if (B.tema.ic && !icerde) {      // karanlik bolum: gorebildigin yer fenerin uzandigi kadar
+      isin(mx, K.gozX - cam.x + K.f * 230, K.gozY - cam.y + 34, 230, '0,0,0', 0.62 * gozA);
+      isin(mx, K.gozX - cam.x + K.f * 390, K.gozY - cam.y + 40, 190, '0,0,0', 0.42 * gozA);
+    }
     for (const z of GZ) {
       mx.save(); mx.translate(z.sx, z.sy); mx.scale(1, 0.62);
       isin(mx, 0, -40, z.g.yaricap * 1.25, '0,0,0', z.guc);
@@ -1358,6 +1430,7 @@
       if (F.elde) isin(mx, F.ex - cam.x, F.ey - cam.y, 170, '0,0,0', 0.7);
       if (F.faz >= 4 && isaret.bas) isin(mx, isaret.x, isaret.y, 150, '0,0,0', clamp(0.5 + 0.1 * F.temas, 0, 0.9));
     } else {
+      dusmanMaske(solE, sagE);
       for (const p of B.presler) if (p.x > solE && p.x < sagE) isin(mx, p.x - cam.x, p.y - 200 - cam.y, 190, '0,0,0', 0.42);
       for (const e of B.elektrik) if (e.acik && e.x1 > solE && e.x0 < sagE) isin(mx, (e.x0 + e.x1) / 2 - cam.x, e.y - 40 - cam.y, 190, '0,0,0', 0.8);
       for (const l of B.lazerler) if (l.acik && l.x1 > solE && l.x0 < sagE) {
@@ -1384,8 +1457,8 @@
     ctx.globalCompositeOperation = 'lighter';
     for (const l of L) {
       if (l.tip === 'lamba') {
-        isin(ctx, l.x, l.y, 26, '225,242,250', 0.95 * l.guc);
-        ctx.save(); ctx.translate(l.x, l.yer); ctx.scale(1, 0.16); isin(ctx, 0, 0, 170, '160,205,225', 0.3 * l.guc); ctx.restore();
+        isin(ctx, l.x, l.y, 26, '255,232,185', 0.95 * l.guc);
+        ctx.save(); ctx.translate(l.x, l.yer); ctx.scale(1, 0.16); isin(ctx, 0, 0, 170, '255,186,105', 0.3 * l.guc); ctx.restore();
       } else {
         // kasa agzindan tasan sicak isik + yere dokulen huzme
         isin(ctx, l.x + 6, l.y, 170, '255,200,130', 0.5 * l.guc);
@@ -1423,7 +1496,7 @@
         const lx = kp.x + ksp.lambaX - cam.x, ly = kp.y + ksp.lambaY - cam.y;
         const yan = kapiAc ? 1 : (Math.sin(zaman * 5) > 0 ? 1 : 0.25);
         isin(ctx, lx, ly, 26, kapiAc ? '120,255,170' : '255,90,60', 0.9 * yan);
-        for (let i = 0; i < B.hatlar.length; i++) isin(ctx, lx + (i === 0 ? -52 : 52), ly + 14, 13, B.hatlar[i].yapildi ? '120,255,170' : '255,90,60', 0.8);
+        for (let i = 0; i < B.hatlar.length; i++) isin(ctx, lx + (i - (B.hatlar.length - 1) / 2) * 62, ly + 14, 13, B.hatlar[i].yapildi ? '120,255,170' : '255,90,60', 0.8);
       }
       for (const z of GZ) {
         ctx.save(); ctx.translate(z.sx, z.sy); ctx.scale(1, 0.2);
@@ -1474,6 +1547,21 @@
       // elektrik arklari: tam kablonun ucundan cikar
       for (const e of B.elektrik) {
         if (e.x1 < solE || e.x0 > sagE || e.ucX === undefined) continue;
+        if (e.izgara) {
+          if (e.acik) {
+            const i0 = Math.max(e.x0, cam.x - 40) - cam.x, i1 = Math.min(e.x1, cam.x + W + 40) - cam.x, iy = e.y - cam.y;
+            ctx.strokeStyle = 'rgba(190,225,255,0.85)'; ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            for (let k = 0; k < 6; k++) {
+              let px = i0 + Math.random() * (i1 - i0);
+              ctx.moveTo(px, iy - 2);
+              for (let j = 0; j < 4; j++) { px += (Math.random() - 0.5) * 44; ctx.lineTo(px, iy - 2 - Math.random() * 22); }
+            }
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(120,180,255,' + (0.10 + Math.random() * 0.08) + ')'; ctx.fillRect(i0, iy - 26, i1 - i0, 26);
+          }
+          continue;
+        }
         const ux = e.ucX - cam.x, uy = e.ucY - cam.y, mrk = (e.x0 + e.x1) / 2 - cam.x, yy = e.y - cam.y, w = e.x1 - e.x0;
         if (e.acik) {
           ctx.strokeStyle = 'rgba(190,225,255,0.9)'; ctx.lineWidth = 1.4;
@@ -1514,7 +1602,8 @@
         const ex = e.x - cam.x, ey = e.y - e.h - cam.y;
         const red = e.redT < 0.6 && Math.sin(e.redT * 40) > 0;
         if (e.tip === 'dugme' || e.tip === 'salter') {
-          isin(ctx, ex, e.tip === 'salter' ? ey - 14 : ey, 13, red ? '255,60,40' : (e.yapildi ? '110,255,160' : '255,80,60'), red ? 1 : (e.yapildi ? 0.8 : 0.55 + 0.3 * Math.sin(zaman * 4)));
+          const yesil = e.yapildi || e.konum;
+          isin(ctx, ex, e.tip === 'salter' ? ey - 14 : ey, 13, red ? '255,60,40' : (yesil ? '110,255,160' : '255,80,60'), red ? 1 : (yesil ? 0.8 : 0.55 + 0.3 * Math.sin(zaman * 4)));
         } else if (e.tip === 'hucre' || e.tip === 'yuva') {
           const dolu = e.tip === 'hucre' ? !e.yapildi : e.yapildi;
           if (dolu) isin(ctx, ex, ey, 22, '255,190,110', 0.6 + 0.2 * Math.sin(zaman * 3));
@@ -1535,7 +1624,9 @@
       // tasinan guc hucresinin isigi
       if (tasinan === 'pil') isin(ctx, K.hx + K.sx * 30 + K.sy * K.f * 19 - cam.x, K.hy + K.sy * 30 - K.sx * K.f * 19 - cam.y, 20, '255,190,110', 0.6);
     }
-    // vizor ve cekirdek
+    if (!icerde) dusmanIsik(solE, sagE);
+    // vizor ve cekirdek: siperin arkasinda kalinca gorunmez
+    siperKirp();
     const gxs = K.gozX - cam.x, gys = K.gozY - cam.y;
     isin(ctx, gxs, gys, 5, '215,245,255', 1 * gozA);
     isin(ctx, gxs + K.f * 3, gys, 26, '110,200,255', 0.6 * gozA);
@@ -1547,9 +1638,10 @@
     const yakin = icerde ? 1 + F.temas * 0.5 : clamp(robot.x / B.bitisX, 0, 1);
     const nabiz = Math.pow(0.5 + 0.5 * Math.sin(zaman * (2.2 + yakin * 7)), 3);
     isin(ctx, K.cekX - cam.x, K.cekY - cam.y, 4 + sev.t * 3 + nabiz * (9 + (icerde ? F.temas * 6 : 0)), '255,190,110', (0.45 + nabiz * 0.55) * gozA);
+    ctx.restore();
     ctx.globalCompositeOperation = 'source-over';
 
-    if (!icerde) {
+    if (!icerde && !B.tema.ic) {
       // --- yer sisi, yagmur ---
       const yerY = robot.sonZeminY - cam.y;
       sisCiz(ctx, zaman * 22 + cam.x * 1.12, yerY - 150, 1.25, 0.34);
@@ -1598,7 +1690,10 @@
 
   function yaziCiz() {
     const M = CFG.metin;
-    if (girisT < 11 && durum !== 'final') {
+    if (bolumNo > 1 && girisT < 6 && durum !== 'final') {
+      yazi(M.bolum + ' ' + bolumNo, W / 2, H * 0.24, 14, gecis(girisT, 0.4, 5.2, 0.8) * 0.7, 'center', 5);
+      yazi(M.bolumAd[bolumNo - 1], W / 2, H * 0.24 + 34, 22, gecis(girisT, 0.7, 5.4, 0.9));
+    } else if (bolumNo === 1 && girisT < 11 && durum !== 'final') {
       const t = girisT;
       yazi(M.giris1, W / 2, H * 0.26, 21, gecis(t, 1.2, 5.2, 0.9));
       yazi(M.giris2, W / 2, H * 0.26, 21, gecis(t, 5.6, 10.2, 0.9));
@@ -1630,13 +1725,447 @@
     }
     // sinyal gostergesi + surum
     if (durum === 'oyun' || durum === 'geri' || durum === 'kapida' || (durum === 'final' && F.faz < 5)) {
-      const yuzde = icerde ? 100 : Math.round(clamp(robot.x / B.bitisX, 0, 1) * 100);
+      // sinyal butun bolumler boyunca dolar: her bolum toplamin 1/5'i
+      const yuzde = icerde ? 100 : Math.round((bolumNo - 1 + clamp(robot.x / B.bitisX, 0, 1)) / BOLUM_SAYI * 100);
       const nb = 0.4 + 0.6 * Math.pow(0.5 + 0.5 * Math.sin(zaman * (2.2 + yuzde * 0.07)), 3);
       ctx.fillStyle = 'rgba(255,190,110,' + nb * 0.8 + ')';
       ctx.beginPath(); ctx.arc(30, 30, 3.5, 0, 6.283); ctx.fill();
       yazi(M.sinyal + '  %' + yuzde, 44, 31, 11, 0.42, 'left', 3);
     }
     yazi(CFG.oyunAdi + ' ' + CFG.surum, W - 16, H - 14, 10, 0.3, 'right', 2);
+  }
+
+  // ================= BOLUMLER =================
+  function bolumYukle(no) {
+    bolumNo = no;
+    B = bolumKur(no); Z = B.zemin;
+    robot = new Robot(Z);
+    robot.merdivenler = B.tirmanma;
+    robot.alcaklar = B.alcaklar;
+    // siperin icinde kalan etkilesim kutulari siperin onunde cizilir (yoksa gorunmez)
+    for (const e of B.etkiler) for (const s of B.siperler) if (Math.abs(e.x - s.x) < 70) e.onde = true;
+    katman = []; onPlan = [];
+    if (!B.tema.ic) katmanKur();
+    for (const o of B.nesneler) if (o.tip === 'lamba') o.guc = 1;
+    yenidenBasla();
+    bolumDugmeleri();
+  }
+  // ustteki 1-5 dugmeleri: hazir bolume aninda gecer
+  function bolumDugmeleri() {
+    const ds = document.querySelectorAll('#bolumler button');
+    for (let i = 0; i < ds.length; i++) {
+      const n = i + 1;
+      ds[i].className = (n === bolumNo ? 'secili' : '') + (n > BOLUM_HAZIR ? ' kilitli' : '');
+      if (!ds[i]._bagli) {
+        ds[i]._bagli = true;
+        ds[i].addEventListener('click', (e) => { e.preventDefault(); if (n <= BOLUM_HAZIR) bolumYukle(n); });
+      }
+    }
+  }
+
+  // ic mekan arka plani (gok, sehir, yagmur yok)
+  function icArka() {
+    const sp = Sanat.s.icDuvar, tw = sp.width;
+    ctx.fillStyle = '#020405'; ctx.fillRect(0, 0, W, H);
+    const kay = cam.x * 0.62, oy = clamp(-cam.y * 0.5 - 40, -110, 110);
+    for (let x = -(((kay % tw) + tw) % tw); x < W; x += tw) ctx.drawImage(sp, x, oy);
+    sisCiz(ctx, zaman * 6 + cam.x * 0.7, H * 0.42, 1.4, 0.10);
+  }
+
+  // ================= DUSMANLAR, LAZER, OLUM SAHNELERI =================
+  function isikta(x, y) {
+    for (const o of B.lambalar) if (!o.kapali && Math.abs(x - o.x) < o.r && Math.abs(y - o.y) < 120) return true;
+    return false;
+  }
+  function saklaniyor() {
+    if (robot.egilK < 0.6) return false;
+    for (const s of B.siperler) if (Math.abs(robot.x - s.x) < s.w / 2 - 6) return true;
+    return false;
+  }
+  function kivEkle(x, y, n) {
+    for (let i = 0; i < n; i++) kiv.push({ x: x, y: y, vx: (Math.random() - 0.5) * 460, vy: -60 - Math.random() * 320, o: 0, s: 0.25 + Math.random() * 0.45 });
+  }
+  function oldur(d) {
+    if (d.olu) return;
+    d.olu = true; d.oluT = 0;
+    ses('hasar', d.x, 0.7);
+    kivEkle(d.x, d.y - 36, 12);
+  }
+  function nisanVur(n) {
+    n.yapildi = true; n.t = 0;
+    ses('vur', n.x);
+    kivEkle(n.x, n.y - n.h, 10);
+    for (const h of n.hedef) { h.kapali = true; h.kalici = true; }
+    for (const h of n.ac) h.kapali = false;
+    if (n.asili) n.asili.durum = 1;
+    if (n.grup && n.grup.every((g) => g.yapildi)) for (const h of n.grupAc) h.kapali = false;
+    if (n.hedef.length) ses('bariyer'); else if (n.ac.length) ses('guc');
+    if (n.dusun) dusun(n.dusun);
+  }
+
+  // omuz lazeri: ekrana dokunulan yone ates eder; ilk carptigi hedefte durur
+  function lazerAt(dt) {
+    lz.sog -= dt; lz.t += dt;
+    if (!yet.lazer || durum !== 'oyun' || !isaret.yeni || isaret.kullanildi || lz.sog > 0 || robot.merd || robot.surunK > 0.5 || robot.etk) return;
+    const K = robot.iskelet, wx = isaret.x + cam.x, wy = isaret.y + cam.y;
+    if (Math.abs(wx - robot.x) < 55 && wy > robot.y - 190 && wy < robot.y + 20) return;      // robotun ustune dokunma: ates etme (oksama)
+    robot.yon = wx >= robot.x ? 1 : -1;
+    const ox = robot.x - robot.yon * 4, oy = K.ny - 9;
+    let dx = wx - ox, dy = wy - oy;
+    const uz = Math.sqrt(dx * dx + dy * dy) || 1;
+    dx /= uz; dy /= uz;
+    let son = 640;
+    for (let s = 24; s <= 640; s += 10) { if (oy + dy * s > Z.yuk(ox + dx * s) + 2) { son = s; break; } }
+    let vur = null;
+    const dene = (o, x, y, r) => {
+      const t = (x - ox) * dx + (y - oy) * dy;
+      if (t < 0 || t > son + r) return;
+      const ux = ox + dx * t - x, uy = oy + dy * t - y;
+      if (ux * ux + uy * uy < r * r) { son = Math.min(son, t); vur = o; }
+    };
+    for (const n of B.nisanlar) if (!n.yapildi && !(n.asili && n.asili.durum !== 0)) dene(n, n.x, n.y - n.h, 24);
+    for (const d of B.dusmanlar) if (!d.olu && d.tip === 'dortayak') dene(d, d.x, d.y - 36, 44);
+    lz.x0 = ox; lz.y0 = oy; lz.x1 = ox + dx * son; lz.y1 = oy + dy * son; lz.ax = dx; lz.ay = dy; lz.t = 0; lz.sog = 0.65;
+    ses('lazer');
+    kivEkle(lz.x1, lz.y1, 5);
+    if (!vur) return;
+    if (vur.tip === 'dortayak') {
+      // yalnizca zirhsiz olan, arkasindan (sirtindaki hucreden) vurulur
+      if (!vur.zirhli && (vur.x - ox) * vur.yon > 0) oldur(vur); else { vur.kosT = 2.2; ses('red'); }
+    } else nisanVur(vur);
+  }
+
+  function dusmanGuncelle(dt) {
+    const rx = robot.x, ry = robot.y, oyun = durum === 'oyun';
+    const gizli = saklaniyor();
+    for (const k of B.kopruler) { k.e.aktif = !k.kapali; k.k = damp(k.k === undefined ? 0 : k.k, k.kapali ? 0 : 1, 5, dt); }
+    for (const n of B.nisanlar) n.t += dt;
+    for (let i = kiv.length - 1; i >= 0; i--) { const k = kiv[i]; k.o += dt; k.vy += 900 * dt; k.x += k.vx * dt; k.y += k.vy * dt; if (k.o > k.s) kiv.splice(i, 1); }
+
+    for (const d of B.dusmanlar) {
+      if (d.olu) { d.oluT += dt; continue; }
+      const dx = rx - d.x, uzak = Math.abs(dx), yon = dx >= 0 ? 1 : -1;
+      if (d.tip === 'golge') {
+        // golge: isikta kipirdayamaz; robot arkasini donunce yaklasir; lambanin altinda kalirsa yanar
+        if (!d.uyanik) { if (oyun && rx > d.uyanX0 && rx < d.uyanX1) d.uyanik = true; else continue; }
+        const lamba = isikta(d.x, d.y);
+        const fener = robot.yon === -yon && uzak < 450 && Math.abs(ry - d.y) < 150 && !robot.merd;
+        d.isik = lamba || fener;
+        if (lamba) { d.yanT += dt; if (d.yanT > 2.2) { oldur(d); continue; } }
+        else {
+          d.yanT = Math.max(0, d.yanT - dt);
+          if (fener) {
+            d.isikT += dt;
+            if (d.isikT > 0.6) { const nx = d.x - yon * 55 * dt; if (nx > d.x0 && nx < d.x1 && !isikta(nx, d.y)) d.x = nx; }    // uzun bakilirsa geriler
+          } else {
+            d.isikT = 0;
+            const nx = d.x + yon * d.hiz * dt;
+            if (Math.abs(ry - d.y) < 220 && uzak > 6 && nx > d.x0 && nx < d.x1 && !isikta(nx, d.y)) { d.x = nx; d.adim += d.hiz * dt; }
+          }
+        }
+        if (oyun && uzak < 32 && Math.abs(ry - d.y) < 70) geriAl('hasar', 'golge');
+      } else {
+        // dortayak: devriye; onunde robotu gorurse kosar
+        d.bekle -= dt;
+        if (oyun && !gizli && yon === d.yon && uzak < d.gor && Math.abs(ry - d.y) < 62) d.kosT = 1.4;
+        if (d.kosT > 0) {
+          d.kosT -= dt; d.yon = yon;
+          const nx = d.x + yon * 265 * dt;
+          if (uzak > 20 && nx > d.x0 - 170 && nx < d.x1 + 170 && Math.abs(Z.yukZemin(nx + yon * 50) - d.y) < 4) d.x = nx;
+          d.adim += 265 * dt;
+        } else if (d.bekle <= 0) {
+          const nx = d.x + d.yon * d.hiz * dt;
+          if ((nx < d.x0 && d.yon < 0) || (nx > d.x1 && d.yon > 0)) { d.yon = -d.yon; d.bekle = 0.8; }
+          else { d.x = nx; d.adim += d.hiz * dt; }
+        }
+        for (const e of B.elektrik) if (e.acik && d.x > e.x0 && d.x < e.x1 && Math.abs(e.y - d.y) < 10) oldur(d);
+        if (!d.olu && oyun && uzak < 46 && ry > d.y - 52 && ry < d.y + 30) geriAl('hasar', 'dortayak');
+      }
+    }
+
+    // halati vurulan sandik duser: altindaki dortayagi (ve robotu) ezer, sonra itilebilir sandik olur
+    for (const a of B.asililar) {
+      if (a.durum !== 1) continue;
+      a.vy += 1500 * dt; a.y += a.vy * dt;
+      if (a.y < a.yer - 70) continue;
+      a.y = a.yer - 70; a.durum = 2;
+      const s = { x0: a.x, x1: a.x + 76, w: 76, h: 70, ust: a.yer - 70, taban: a.yer, min: a.min, max: a.max, bas: a.x, gecici: true };
+      Z.bloklar.push(s); B.sandiklar.push(s); a.s = s;
+      sars = Math.max(sars, 4); tozEkle(a.x + 38, a.yer, 10, 90, 160); ses('pres', a.x, 0.7);
+      for (const d of B.dusmanlar) if (!d.olu && d.tip === 'dortayak' && Math.abs(d.x - (a.x + 38)) < 80 && Math.abs(d.y - a.yer) < 10) oldur(d);
+      if (oyun && Math.abs(rx - (a.x + 38)) < 48 && Math.abs(ry - a.yer) < 30) geriAl('hasar', 'ezik');
+    }
+
+    // tasiyicinin ustunde, egilmeden yuksek boruya gelirse takilir (tasiyici altindan kayip gider)
+    for (const a of B.alcaklar) {
+      if (!a.kot || rx < a.x0 - 4 || rx > a.x1 + 4) continue;
+      if (ry < a.y - a.kot + 30 && ry > a.y - a.kot - 60 && robot.boyAl() > 116) {
+        const p = B.paletliler.find((q) => rx >= q.x0 - 4 && rx <= q.x1 + 4);
+        const yn = p ? p.yon : robot.yon;
+        robot.x = yn > 0 ? a.x0 - 5 : a.x1 + 5; robot.vx = 0;
+        if (zaman - (a.sesT || -9) > 1) { a.sesT = zaman; ses('kalas'); sars = Math.max(sars, 2); }
+      }
+    }
+  }
+
+  // tasinan guc hucresinin yeri: once elde, sonra sirta takilir
+  function pilNokta() {
+    const K = robot.iskelet;
+    const bx = K.hx + K.sx * 30 + K.sy * K.f * 19, by = K.hy + K.sy * 30 - K.sx * K.f * 19;
+    const k = smooth((tasT - 0.35) / 0.5);
+    return { x: lerp(tasX, bx, k), y: lerp(tasY, by, k), k: k };
+  }
+  // ellerin gidecegi yer: itilen sandigin ust kosesi / sirta takilan hucre
+  function elleriAyarla() {
+    if (durum === 'final') return;
+    let h0 = null, h1 = null;
+    if (itilen) { h0 = { x: itilen.x, y: itilen.y + 5 }; h1 = { x: itilen.x, y: itilen.y + 17 }; }
+    else if (tasinan && tasT < 0.9) { const p = pilNokta(); h0 = { x: p.x, y: p.y }; }
+    robot.elHedef[0] = h0; robot.elHedef[1] = h1;
+  }
+
+  function dusmanCiz() {
+    const s = Sanat.s, sol = cam.x - 260, sag = cam.x + W + 260;
+    // tavan lambalari
+    for (const o of B.lambalar) {
+      if (o.x < sol || o.x > sag) continue;
+      const ly = o.y - o.h;
+      gx.strokeStyle = '#0b0e10'; gx.lineWidth = 2;
+      gx.beginPath(); gx.moveTo(o.x, ly - 700); gx.lineTo(o.x, ly - 18); gx.stroke();
+      bas(gx, s.tlamba, o.x - s.tlamba.kokX, ly - s.tlamba.lh + 4);
+    }
+    // uzanan kopruler
+    for (const k of B.kopruler) {
+      const e = k.e;
+      if (e.x1 < sol || e.x0 > sag) continue;
+      serit(s.tabla150, e.x0, e.y, (e.x1 - e.x0) * (0.1 + 0.9 * (k.k || 0)));
+      gx.fillStyle = '#161b1e'; gx.fillRect(e.x0 - 16, e.y - 5, 16, 26);
+    }
+    // sigorta kutulari
+    for (const n of B.nisanlar) {
+      if (n.tip !== 'sigorta' || n.x < sol || n.x > sag) continue;
+      const ny = n.y - n.h;
+      gx.strokeStyle = '#0b0e10'; gx.lineWidth = 3;
+      gx.beginPath(); gx.moveTo(n.x, ny - 20); gx.lineTo(n.x, ny - 700); gx.stroke();
+      bas(gx, s.sigorta, n.x - s.sigorta.kokX, ny - s.sigorta.kokY);
+      if (n.yapildi) { gx.fillStyle = 'rgba(0,0,0,0.65)'; gx.beginPath(); gx.arc(n.x, ny, 9, 0, 6.283); gx.fill(); }
+    }
+    // halata asili sandiklar
+    for (const a of B.asililar) {
+      if (a.x < sol - 100 || a.x > sag || a.durum === 2) continue;
+      gx.strokeStyle = '#3a3128'; gx.lineWidth = 3; gx.lineCap = 'butt';
+      gx.beginPath();
+      if (a.durum === 0) {
+        gx.moveTo(a.x + 38, a.y - 700); gx.lineTo(a.x + 38, a.y - 22);
+        gx.moveTo(a.x + 38, a.y - 22); gx.lineTo(a.x + 8, a.y + 4); gx.moveTo(a.x + 38, a.y - 22); gx.lineTo(a.x + 68, a.y + 4);
+      } else { gx.moveTo(a.x + 38, a.y0 - 700); gx.lineTo(a.x + 38 + Math.sin(zaman * 5) * 4, a.y0 - 56); }
+      gx.stroke();
+      bas(gx, s.sandik, a.x, a.y);
+    }
+    // paletli tasiyicilar
+    for (const p of B.paletliler) {
+      if (p.x1 < sol || p.x0 > sag) continue;
+      bas(gx, s.paletli, p.x0, p.ust);
+      gx.fillStyle = 'rgba(120,135,142,0.5)';
+      const kay = ((p.x0 % 14) + 14) % 14;
+      for (let xx = 10 + (14 - kay); xx < p.w - 12; xx += 14) { gx.fillRect(p.x0 + xx, p.ust + 47, 5, 2.4); gx.fillRect(p.x1 - xx - 5, p.taban - 2.6, 5, 2.4); }
+    }
+    // dusmanlar
+    for (const d of B.dusmanlar) {
+      if (d.x < sol || d.x > sag) continue;
+      if (d.tip === 'golge') {
+        const sp = s.golge, alfa = d.olu ? clamp(1 - d.oluT / 1.6, 0, 1) : 1;
+        if (alfa <= 0) continue;
+        gx.globalAlpha = alfa;
+        const cok = d.olu ? smooth(d.oluT / 0.8) * 42 : 0;
+        const by = d.y - 44 + cok + (d.isik || d.olu ? 0 : Math.sin(d.adim * 0.07) * 3);     // govdenin alti
+        const rr = sign(robot.x - d.x) || 1, uz = d.isik || !d.uyanik ? 4 : 26;
+        gx.strokeStyle = '#07090b'; gx.lineWidth = 3; gx.lineCap = 'round';
+        gx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          const yan = i < 2 ? -1 : 1, f = d.adim * 0.06 + i * 1.7;
+          const fx = d.x + yan * (16 + (i % 2) * 14) + Math.sin(f) * 9, fy = d.y - (d.isik ? 0 : Math.max(0, Math.cos(f)) * 7);
+          gx.moveTo(d.x + yan * 5, by); gx.quadraticCurveTo(d.x + yan * (30 + (i % 2) * 10), by - 26, fx, fy);
+        }
+        // uzun kollar: robota dogru uzanir
+        gx.moveTo(d.x - 16, by - 92); gx.quadraticCurveTo(d.x - 26 + rr * 10, by - 50, d.x - 14 + rr * uz, by - 18);
+        gx.moveTo(d.x + 16, by - 92); gx.quadraticCurveTo(d.x + 26 + rr * 10, by - 50, d.x + 14 + rr * uz, by - 18);
+        gx.stroke(); gx.lineCap = 'butt';
+        bas(gx, sp, d.x - sp.kokX, by - sp.lh + 6);
+        gx.globalAlpha = 1;
+      } else {
+        const sp = d.zirhli ? s.dortayakZ : s.dortayak;
+        const gy = d.y - 20 + (d.olu ? smooth(d.oluT / 0.4) * 16 : 0);       // govdenin alti
+        gx.strokeStyle = '#1c2226'; gx.lineWidth = 5; gx.lineCap = 'round';
+        gx.beginPath();
+        for (let i = 0; i < 4; i++) {
+          const kx = d.x + ((i < 2 ? -38 : 30) + (i % 2) * 9) * d.yon, f = d.adim * 0.075 + (i === 0 || i === 3 ? 0 : 3.14);
+          const fx = kx + (d.olu ? (i < 2 ? -15 : 15) * d.yon : Math.sin(f) * 12 * d.yon), fy = d.y - (d.olu ? 0 : Math.max(0, Math.cos(f)) * 7);
+          const ik = ikCoz(kx, gy - 6, fx, fy, 15, 15, d.yon * (i < 2 ? 1 : -1));
+          gx.moveTo(kx, gy - 6); gx.lineTo(ik.jx, ik.jy); gx.lineTo(ik.ex, ik.ey);
+        }
+        gx.stroke(); gx.lineCap = 'butt';
+        gx.save(); gx.translate(d.x, gy);
+        if (d.yon < 0) gx.scale(-1, 1);
+        if (d.olu) gx.rotate(0.1);
+        bas(gx, sp, -sp.kokX, -sp.lh + 10);
+        gx.restore();
+      }
+    }
+  }
+
+  // robot + olum sahneleri + omuz lazeri
+  function robotCiz() {
+    const K = robot.iskelet, x = robot.x, y = robot.y;
+    const olur = durum === 'geri' && !robot._yerlesti && olm.tip;
+    if (olur && olm.tip === 'ezik') {
+      // pres altinda yassilasir
+      const k = clamp(dZaman / 0.14, 0, 1);
+      gx.save(); gx.translate(x, y); gx.scale(lerp(1, 1.55, k), lerp(1, 0.09, k * k)); gx.translate(-x, -y);
+      robot.ciz(gx); gx.restore();
+    } else if (olur && olm.tip === 'lazer') {
+      // lazerin gectigi hizadan kesilir: ust yari kayip duser
+      const ky = Math.min(olm.y, y - 6), k = smooth((dZaman - 0.12) / 0.75);
+      gx.save(); gx.beginPath(); gx.rect(x - 240, ky, 480, 500); gx.clip(); robot.ciz(gx); gx.restore();
+      gx.save();
+      gx.translate(x - robot.yon * k * 30, ky + k * k * Math.max(0, y - ky - 14)); gx.rotate(-robot.yon * k * 1.35); gx.translate(-x, -ky);
+      gx.beginPath(); gx.rect(x - 240, ky - 500, 480, 500); gx.clip(); robot.ciz(gx); gx.restore();
+    } else if (olur && olm.tip === 'elektrik' && dZaman < 0.75) {
+      gx.save(); gx.translate((Math.random() - 0.5) * 5, (Math.random() - 0.5) * 4); robot.ciz(gx); gx.restore();
+    } else robot.ciz(gx);
+    if (yet.lazer && !olur) {
+      // omuzdaki lazer: son ates edilen yone doner
+      const sp = Sanat.s.omuz;
+      let ac = -0.12;
+      if (lz.t < 0.7) ac = clamp(Math.atan2(lz.ay, lz.ax * K.f), -1.3, 1.1);
+      gx.save(); gx.translate(K.nx - K.f * 7, K.ny - 7);
+      if (K.f < 0) gx.scale(-1, 1);
+      gx.rotate(ac);
+      bas(gx, sp, -sp.kokX, -sp.kokY);
+      gx.restore();
+    }
+  }
+
+  function olumIsik() {
+    if (durum !== 'geri' || robot._yerlesti || !olm.tip) return;
+    const x = robot.x - cam.x, y = robot.y - cam.y, t = dZaman;
+    if (olm.tip === 'lazer') {
+      const ky = Math.min(olm.y, robot.y - 6) - cam.y, a = clamp(1.5 - t, 0, 1);
+      ctx.strokeStyle = 'rgba(255,150,60,' + a + ')'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.moveTo(x - 24, ky); ctx.lineTo(x + 24, ky); ctx.stroke();
+      isin(ctx, x, ky, 44, '255,120,50', 0.7 * a);
+    } else if (olm.tip === 'elektrik' && t < 0.85) {
+      ctx.strokeStyle = 'rgba(190,225,255,0.9)'; ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      for (let k = 0; k < 4; k++) {
+        let px = x + (Math.random() - 0.5) * 40, py = y - Math.random() * 150;
+        ctx.moveTo(px, py);
+        for (let j = 0; j < 3; j++) { px += (Math.random() - 0.5) * 30; py += (Math.random() - 0.5) * 34; ctx.lineTo(px, py); }
+      }
+      ctx.stroke();
+      isin(ctx, x, y - 80, 120, '140,190,255', 0.3 + Math.random() * 0.3);
+    } else if (olm.tip === 'yakalandi') {
+      // hedef kilidi: kirmizi kose isaretleri daralir
+      const a = clamp(t / 0.2, 0, 1) * clamp(1.4 - t, 0, 1), b = 46 + (1 - clamp(t / 0.35, 0, 1)) * 70, cy = y - 84, u = 16;
+      ctx.strokeStyle = 'rgba(255,60,50,' + 0.85 * a + ')'; ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      for (let sx = -1; sx <= 1; sx += 2) for (let sy = -1; sy <= 1; sy += 2) {
+        const px = x + sx * b, py = cy + sy * b * 1.5;
+        ctx.moveTo(px - sx * u, py); ctx.lineTo(px, py); ctx.lineTo(px, py - sy * u);
+      }
+      ctx.stroke();
+    } else if (olm.tip === 'golge') isin(ctx, x, y - 80, 170, '255,30,20', 0.3 * clamp(1 - t, 0, 1));
+    else if (olm.tip === 'ezik' && t < 0.3) isin(ctx, x, y - 10, 90, '255,200,130', 0.5 * (1 - t / 0.3));
+  }
+
+  // lambalar, dusman gozleri, hedef isaretleri, lazer isini, kivilcimlar (ekran koordinati, parlak katman)
+  function dusmanIsik(solE, sagE) {
+    const K = robot.iskelet;
+    for (const o of B.lambalar) {
+      if (o.kapali || o.x < solE - 200 || o.x > sagE + 200) continue;
+      const lx = o.x - cam.x, ly = o.y - o.h - cam.y, yer = o.y - cam.y;
+      const g = ctx.createLinearGradient(0, ly, 0, yer);
+      g.addColorStop(0, 'rgba(255,200,120,0.24)'); g.addColorStop(1, 'rgba(255,200,120,0.02)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.moveTo(lx - 12, ly); ctx.lineTo(lx + 12, ly); ctx.lineTo(lx + o.r, yer); ctx.lineTo(lx - o.r, yer); ctx.closePath(); ctx.fill();
+      isin(ctx, lx, ly, 26, '255,230,180', 0.95);
+      ctx.save(); ctx.translate(lx, yer); ctx.scale(1, 0.16); isin(ctx, 0, 0, o.r, '255,190,110', 0.32); ctx.restore();
+    }
+    for (const d of B.dusmanlar) {
+      if (d.x < solE || d.x > sagE) continue;
+      const dx = d.x - cam.x, dy = d.y - cam.y;
+      if (d.tip === 'golge') {
+        if (d.olu) { if (d.oluT < 0.8) isin(ctx, dx, dy - 80, 90, '255,160,80', 0.6 * (1 - d.oluT / 0.8)); continue; }
+        isin(ctx, dx, dy - 156, d.isik ? 5 : 8, '255,40,30', d.uyanik ? (d.isik ? 0.5 : 0.95) : 0.16);
+        if (d.yanT > 0) isin(ctx, dx, dy - 90, 60 + d.yanT * 20, '255,150,70', 0.2 + 0.25 * Math.random());      // lambanin altinda yaniyor
+      } else {
+        if (d.olu) { if (d.oluT < 0.7 && Math.random() < 0.6) isin(ctx, dx + (Math.random() - 0.5) * 60, dy - 30, 22, '170,210,255', 0.8); continue; }
+        const rk = d.kosT > 0 ? '255,60,50' : '255,190,110';
+        isin(ctx, dx + d.yon * 50, dy - 47, 9, rk, 0.9);
+        const g = ctx.createLinearGradient(dx, 0, dx + d.yon * d.gor, 0);
+        g.addColorStop(0, 'rgba(' + rk + ',0.16)'); g.addColorStop(1, 'rgba(' + rk + ',0)');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.moveTo(dx + d.yon * 50, dy - 49); ctx.lineTo(dx + d.yon * d.gor, dy - 86); ctx.lineTo(dx + d.yon * d.gor, dy); ctx.lineTo(dx + d.yon * 50, dy - 44); ctx.closePath(); ctx.fill();
+        if (!d.zirhli) isin(ctx, dx - d.yon * 46, dy - 50, 11, '255,190,110', 0.7 + 0.25 * Math.sin(zaman * 5));
+      }
+    }
+    for (const p of B.paletliler) {
+      if (p.x1 < solE || p.x0 > sagE) continue;
+      isin(ctx, (p.yon > 0 ? p.x1 - 15 : p.x0 + 15) - cam.x, p.ust + 19 - cam.y, 12, '255,190,110', 0.8);
+    }
+    for (const n of B.nisanlar) {
+      if (n.x < solE || n.x > sagE) continue;
+      const nx = n.x - cam.x, ny = n.y - n.h - cam.y;
+      if (n.yapildi) { if (n.t < 0.5) isin(ctx, nx, ny, 50, '170,210,255', (1 - n.t / 0.5) * (0.5 + Math.random() * 0.5)); continue; }
+      if (n.asili && n.asili.durum !== 0) continue;
+      const nb = 0.5 + 0.5 * Math.sin(zaman * 4 + n.x);
+      isin(ctx, nx, ny, 10, '120,220,255', 0.5 + 0.3 * nb);
+      if (yet.lazer) {
+        // nisan isareti
+        ctx.strokeStyle = 'rgba(120,220,255,' + (0.25 + 0.3 * nb) + ')'; ctx.lineWidth = 1.3;
+        ctx.beginPath(); ctx.arc(nx, ny, 16 + nb * 3, 0, 6.283);
+        ctx.moveTo(nx - 24, ny); ctx.lineTo(nx - 12, ny); ctx.moveTo(nx + 12, ny); ctx.lineTo(nx + 24, ny); ctx.stroke();
+      }
+    }
+    if (lz.t < 0.18) {
+      const a = 1 - lz.t / 0.18, x0 = lz.x0 - cam.x, y0 = lz.y0 - cam.y, x1 = lz.x1 - cam.x, y1 = lz.y1 - cam.y;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(80,190,255,' + 0.35 * a + ')'; ctx.lineWidth = 9; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      ctx.strokeStyle = 'rgba(225,245,255,' + a + ')'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+      ctx.lineCap = 'butt';
+      isin(ctx, x1, y1, 46, '140,215,255', 0.8 * a); isin(ctx, x0, y0, 22, '140,215,255', 0.7 * a);
+    }
+    if (yet.lazer && !icerde) isin(ctx, K.nx - K.f * 2 - cam.x, K.ny - 10 - cam.y, 5, '120,220,255', lz.sog > 0 ? 0.3 : 0.8);
+    if (kiv.length) {
+      ctx.strokeStyle = 'rgba(255,214,150,0.9)'; ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      for (const k of kiv) { const x = k.x - cam.x, y = k.y - cam.y; ctx.moveTo(x, y); ctx.lineTo(x - k.vx * 0.03, y - k.vy * 0.03); }
+      ctx.stroke();
+    }
+    olumIsik();
+  }
+
+  function dusmanMaske(solE, sagE) {
+    for (const o of B.lambalar) {
+      if (o.kapali || o.x < solE - 200 || o.x > sagE + 200) continue;
+      isin(mx, o.x - cam.x, o.y - 70 - cam.y, o.r * 1.5, '0,0,0', 0.95); isin(mx, o.x - cam.x, o.y - o.h - cam.y, 110, '0,0,0', 0.7);
+    }
+    for (const n of B.nisanlar) if (!n.yapildi && n.x > solE && n.x < sagE) isin(mx, n.x - cam.x, n.y - n.h - cam.y, 60, '0,0,0', 0.5);
+    for (const p of B.paletliler) if (p.x1 > solE && p.x0 < sagE) isin(mx, (p.x0 + p.x1) / 2 - cam.x, p.ust + 20 - cam.y, 130, '0,0,0', 0.45);
+    for (const d of B.dusmanlar) if (d.tip === 'dortayak' && d.x > solE && d.x < sagE) isin(mx, d.x + d.yon * 60 - cam.x, d.y - 40 - cam.y, 120, '0,0,0', 0.4);
+    if (lz.t < 0.18) isin(mx, lz.x1 - cam.x, lz.y1 - cam.y, 120, '0,0,0', 0.7);
+  }
+
+  // robotun isiklari siperin arkasindan gorunmesin: siperlerin alani kirpilir
+  function siperKirp() {
+    const p = new Path2D();
+    p.rect(0, 0, W, H);
+    for (const s of B.siperler) {
+      const sx = s.x - cam.x;
+      if (sx < -120 || sx > W + 120) continue;
+      p.rect(sx - 50, Z.yukZemin(s.x) - cam.y - 106, 100, 112);
+    }
+    ctx.save(); ctx.clip(p, 'evenodd');
   }
 
   let sonT = 0;

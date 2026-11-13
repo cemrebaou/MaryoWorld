@@ -4,16 +4,16 @@
 const SES = (function () {
   const YOL = 'assets/sounds/';
   const AYAR = {
-    yagmur: 0.38,     // ambiyans yagmur sesi
-    adim: 0.75,       // ayak yere basinca
+    yagmur: 0.62,     // ambiyans yagmur sesi
+    adim: 0.40,       // ayak yere basinca
     inis: 1.0,        // zipladiktan sonra yere inis
   };
   const ADIMLAR = []; for (let i = 1; i <= 10; i++) ADIMLAR.push('step_' + i + '.mp3');
   // Olay sesleri (fx_<ad>.mp3): earshot ses bankasindan uretildi. Oyun SES.cal('ad', siddet) ile calar.
   // Buradaki sayi her sesin temel seviyesidir.
   const FX = {
-    pres: 0.9, dugme: 0.7, salter: 0.8, fis: 0.7, hucre: 0.7, red: 0.5, alarm: 0.6, hasar: 0.8, dustu: 0.8,
-    kapi: 0.9, kalas: 0.7, bariyer: 0.35, guc: 0.6, sev: 0.5, el: 0.45, buldum: 0.8, basamak: 0.3, elektrik: 0.4, sandik: 0.5
+    pres: 0.81, dugme: 0.7, salter: 0.8, fis: 0.7, hucre: 0.7, red: 0.5, alarm: 0.6, hasar: 0.8, dustu: 0.8,
+    kapi: 0.9, kalas: 0.7, bariyer: 0.35, guc: 0.6, sev: 0.5, el: 0.45, buldum: 0.8, basamak: 0.16, elektrik: 0.4, sandik: 0.5, lazer: 0.45, vur: 0.6
   };
   const fxDosya = (ad) => 'fx_' + ad + '.mp3';
 
@@ -93,7 +93,7 @@ const SES = (function () {
         if (this.indiOlay > 250) adimCal(AYAR.inis * Math.min(1, this.indiOlay / 600));
         else if (this.bastiOlay) adimCal(AYAR.adim * (0.55 + this.bastiOlay.guc * 0.45));
         // dik merdivende her basamakta tik
-        if (this.merd) { const b = Math.floor(this.y / 22); if (this._sesBas !== undefined && b !== this._sesBas) cal('basamak', 1); this._sesBas = b; }
+        if (this.merd) { const b = Math.floor(this.y / 22); if (this._sesBas !== undefined && b !== this._sesBas) cal('basamak', 1, 0.8); this._sesBas = b; }
         else this._sesBas = undefined;
       }
       return r;

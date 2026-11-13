@@ -1,7 +1,7 @@
 // MaryoWorld - ayarlar. Her degisiklikte surum artirilir.
 'use strict';
 const CFG = {
-  surum: 'v0.09',
+  surum: 'v0.10',
   oyunAdi: 'MARYO WORLD',
 
   // Ekran (mantiksal cozunurluk; yukseklik sabit, genislik orana gore)
@@ -32,7 +32,7 @@ const CFG = {
   // Surunme (egilme tusu basili tutulunca) ve sandik itme
   surunBekle: 0.25,    // bu kadar basili tutulunca surunmeye gecer; daha kisa basis = egil / kalk
   surunHiz: 0.32,      // surunme hizi orani
-  boySurun: 76,
+  boySurun: 80,
   itmeHiz: 95,         // sandik itme hizi (px/sn)
 
   // Dik merdiven (tirmanma)
@@ -105,6 +105,31 @@ const CFG = {
     ic4b: 'Oradasın. Biliyorum.',
     ic5: 'Sensin.',
     ic6: 'Bunca yolu sana gelmek için yürüdüm.',
+    // bolumler
+    bolum: 'BÖLÜM',
+    bolumAd: ['YÜZEY', 'ALT KATLAR', '', '', ''],
+    // bolum 2
+    ipLazer: 'LAZER: VURMAK İSTEDİĞİN YERE DOKUN',
+    ipGolge: 'IŞIĞINDA DURUR. ARKANI DÖNERSEN GELİR.',
+    ipDort: 'ARKASINA GEÇ, SIRTINDAKİ HÜCREYE ATEŞ ET',
+    ipSalter: 'ŞALTER: IZGARAYA ELEKTRİK VER / KES',
+    ipBin: 'ÜSTÜNE ZIPLA, SENİ TAŞISIN',
+    ipHalat: 'HALATI VUR',
+    ipSigorta: 'SİGORTAYI VUR: LAMBA YANAR',
+    d2Bas: 'İçerisi dışarıdan da karanlık. Gördüğüm, ışığım kadar.',
+    dLazer: 'Bir kesici. Omzuma oturdu. Sen nereyi gösterirsen oraya.',
+    dGolge: 'Arkamda bir şey var. Baktığımda duruyor.',
+    dIsik: 'Işık yandı. Buraya giremez.',
+    dArkam: 'İterken sırtım dönük. Yaklaşıyor.',
+    dDort: 'Dört ayaklı bir bekçi. Sırtındaki hücre açıkta.',
+    dZirh: 'Bunun sırtı zırhlı. Kesici işlemez.',
+    dPalet: 'Ağır bir taşıyıcı. Elektrik ona dokunmuyor.',
+    dHalat: 'Sandık bir halata asılı.',
+    dAda: 'Bir ada kadar ışık. Şimdilik yeter.',
+    dKopru: 'Köprü geri çekilmiş. Sigortası karşıda.',
+    dBekle: 'Taşıyıcı uzakta. Arkama bakmayı bırakamam.',
+    dSonKapi: 'Kapının üç sigortası var. Üçü de yukarıda.',
+    dUcSigorta: 'Üç sigorta da vurulmadan kapı açılmaz.',
     // ekrana dokunarak bir is yaptirilinca (oyuncunun eli): sirayla soylenir
     el: [
       'Elim uzanmadan önce biri yolu gösterdi.',
