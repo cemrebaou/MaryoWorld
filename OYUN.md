@@ -1,4 +1,4 @@
-# MaryoWorld - oyun notlari (v0.11)
+# MaryoWorld - oyun notlari (v0.12)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -237,3 +237,7 @@ Oyun `SES.cal(ad, siddet)` ile calar (game.js `ses()` uzakliga gore kisar).
 - Onceki bolumlerin her seyi karisik: golge, zirhli dortayak, paletli, fan, ari, ayna zinciri, halkalar, taretler.
 - Son kapi uc kilit ister: zirhli taret (atesini geri yolla), aynali sigorta, ucurumun karsisindaki kol. Arkasinda bitis odasi.
 
+## v0.12
+- Surunme tunellerindeki cift lazerlerin arasi acildi (~300 px).
+- Lazer yalnizca govde kirmizi cizgiye gercekten degince yakar (yatayda ve dikeyde pay birakildi).
+- Yanip sonen lazerlerin sonuk kalma suresi 0.2 sn uzadi (`periyot + 2.3`, yanik sure ayni).

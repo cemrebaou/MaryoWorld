@@ -449,12 +449,12 @@
       l.acik = !l.kapali && (!l.periyot || f < (l.oran || 0.4));
       l.yakinda = !l.kapali && l.periyot > 0 && f > 0.88;
       // govdenin tamami sayilir: surunurken eller onde, ayaklar arkada
-      const onU = robot.surunK > 0.5 ? 96 : 16, arkaU = robot.surunK > 0.5 ? 52 : 16;
+      const onU = robot.surunK > 0.5 ? 74 : 9, arkaU = robot.surunK > 0.5 ? 40 : 9;      // cizgiye gercekten degen govde (pay birakilir)
       const bx0 = rx - (robot.yon > 0 ? arkaU : onU), bx1 = rx + (robot.yon > 0 ? onU : arkaU);
-      if (!l.acik || bx1 < l.x0 || bx0 > l.x1) continue;
+      if (!l.acik || bx1 < l.x0 + 3 || bx0 > l.x1 - 3) continue;
       const by = l.y - l.h;
-      if (l.ust) { if (ry - boy < by - 4 && ry > by) { olum = 'yakalandi'; otip = 'lazer'; oy = by; } }
-      else if (ry > by - 2 && ry < l.y + 40) { olum = 'yakalandi'; otip = 'lazer'; oy = by; }
+      if (l.ust) { if (ry - boy < by - 12 && ry > by) { olum = 'yakalandi'; otip = 'lazer'; oy = by; } }
+      else if (ry > by + 5 && ry < l.y + 40) { olum = 'yakalandi'; otip = 'lazer'; oy = by; }
     }
     // sivri demirler
     for (const d of B.dikenler) if (rx > d.x0 + 8 && rx < d.x1 - 8 && ry > d.y - 10 && ry < d.y + 40) { olum = 'hasar'; otip = 'diken'; }

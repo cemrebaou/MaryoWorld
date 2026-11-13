@@ -210,7 +210,7 @@ function kurucu() {
   // lazer. tip: 'ust' (124 px, egilerek), 'surun' (92 px, surunerek), 'alt' (16 px, ziplayarak / sonukken)
   // periyot verilirse yanip soner
   const lazer = (x, w, tip, periyot, faz) => {
-    const l = { x0: x, x1: x + w, y: z.y, h: tip === 'ust' ? 124 : (tip === 'surun' ? 92 : 16), ust: tip !== 'alt', periyot: periyot ? periyot + 2.1 : 0, oran: 0.28, faz: faz || 0, acik: true };   // yanip sonenler: 1.4 sn acik, ~3.5 sn kapali (surunerek ucu ucuna)
+    const l = { x0: x, x1: x + w, y: z.y, h: tip === 'ust' ? 124 : (tip === 'surun' ? 92 : 16), ust: tip !== 'alt', periyot: periyot ? periyot + 2.3 : 0, oran: periyot ? 0.28 * (periyot + 2.1) / (periyot + 2.3) : 0.28, faz: faz || 0, acik: true };   // yanip sonenler: 1.4 sn acik, ~3.5 sn kapali (surunerek ucu ucuna)
     B.lazerler.push(l);
     return l;
   };
@@ -604,15 +604,15 @@ function bolum1() {
   // 18 - havalandirma tunelleri: surunerek, yanip sonen alt lazerleri zamanlayarak
   a0 = z.x; z.duz(1900);
   temiz(a0, a0 + 1900);
-  dar(a0 + 120, 560);
-  lazer(a0 + 300, 56, 'alt', 3.0, 0);
-  lazer(a0 + 500, 56, 'alt', 3.0, 1.5);
+  dar(a0 + 120, 630);
+  lazer(a0 + 260, 56, 'alt', 3.0, 0);
+  lazer(a0 + 580, 56, 'alt', 3.0, 1.5);
   kontrol(a0 + 770);
   nesne('lamba', a0 + 800);
   pres(a0 + 930, 2.6, 0);
   dar(a0 + 1100, 480);
-  lazer(a0 + 1250, 56, 'alt', 2.6, 0.4);
-  lazer(a0 + 1420, 56, 'alt', 2.6, 1.7);
+  lazer(a0 + 1200, 56, 'alt', 2.6, 0.4);
+  lazer(a0 + 1490, 56, 'alt', 2.6, 1.7);
   kontrol(a0 + 1680);
   nesne('lamba', a0 + 1760, { titrek: true });
 
@@ -854,8 +854,8 @@ function bolum2() {
   const l12 = tlamba(a0 + 620, true);
   nisan('sigorta', a0 + 620, 240, [], { ac: [l12] });
   dar(a0 + 820, 520);
-  lazer(a0 + 1000, 56, 'alt', 3.0, 0);
-  lazer(a0 + 1200, 56, 'alt', 3.0, 1.5);
+  lazer(a0 + 940, 56, 'alt', 3.0, 0);
+  lazer(a0 + 1240, 56, 'alt', 3.0, 1.5);
   kontrol(a0 + 1450); tlamba(a0 + 1560);
   dar(a0 + 1750, 420);
   lazer(a0 + 1920, 56, 'alt', 2.6, 0.5);
