@@ -1,4 +1,4 @@
-# Son Sinyal - oyun notlari (v0.19)
+# Son Sinyal - oyun notlari (v0.20)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -270,7 +270,7 @@ Oyun kodu `game.js` sonundaki `ek2*` fonksiyonlarinda (`ek2Guncelle`, `ek2Once2`
 ## Android (AAB) - v0.17
 - Capacitor 7, paket adi `com.jawk.sonsinyal`, yatay ekran + tam ekran. `android/` klasoru repoda tutulmaz, CI'da `npx cap add android` ile uretilir (`android-ayar/ayarla.py` ayarlari yapar).
 - GitHub Actions `Android AAB` (her main gonderiminde + elle): cikti Actions calismasinin "Artifacts" bolumunde `son-sinyal-aab-<surum>-<imza>`.
-- Surum kodu = calisma numarasi, surum adi = `config.js` surum.
+- Surum kodu = calisma numarasi, surum adi = `config.js` surum. minSdk 24 (Play otomatik koruma sarti).
 - Imza: repo Secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`. Yoksa gecici anahtar kullanilir (artifact adinda `gecici`), Play'e yuklenemez.
 - Ikon: kullanicinin gorseli (`assets/icon-only.png` 1024; adaptif: `icon-foreground.png` = ikon %70 ortada, `icon-background.png` = bulanik). CI `@capacitor/assets` ile tum boyutlara cevirir. Android acilis (splash) duz siyah.
 

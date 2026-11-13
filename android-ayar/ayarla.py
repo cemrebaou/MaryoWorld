@@ -46,4 +46,10 @@ if 'signingConfigs' not in s:
     s = s.replace('buildTypes {', imza.strip('\n') + '\n    buildTypes {', 1)
     s = re.sub(r'(buildTypes\s*\{\s*release\s*\{)', r'\1\n            signingConfig signingConfigs.release', s, 1)
 yaz(gr, s)
+# 4) Play otomatik koruma: minSdk en az 24
+vg = 'android/variables.gradle'
+if os.path.exists(vg):
+    v = oku(vg)
+    v = re.sub(r'minSdkVersion\s*=\s*\d+', 'minSdkVersion = 24', v)
+    yaz(vg, v)
 print('ayarlandi', kod, ad)
