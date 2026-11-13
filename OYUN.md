@@ -1,4 +1,4 @@
-# Son Sinyal - oyun notlari (v0.17)
+# Son Sinyal - oyun notlari (v0.18)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -272,3 +272,4 @@ Oyun kodu `game.js` sonundaki `ek2*` fonksiyonlarinda (`ek2Guncelle`, `ek2Once2`
 - GitHub Actions `Android AAB` (her main gonderiminde + elle): cikti Actions calismasinin "Artifacts" bolumunde `son-sinyal-aab-<surum>-<imza>`.
 - Surum kodu = calisma numarasi, surum adi = `config.js` surum.
 - Imza: repo Secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`. Yoksa gecici anahtar kullanilir (artifact adinda `gecici`), Play'e yuklenemez.
+- Ikon: `android-ayar/ikon.py` kodla uretir (`assets/icon-*.png`); CI `@capacitor/assets` ile tum boyutlara cevirir.
