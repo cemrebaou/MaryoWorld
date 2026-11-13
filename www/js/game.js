@@ -958,7 +958,7 @@
       const ty = e.y - e.h;
       if (e.tip === 'silah') {      // kaidenin ustunde duran omuz lazeri
         bas(gx, s.kaide, e.x - s.kaide.kokX, e.y - s.kaide.lh + 2);
-        const al = e.verir === 'lazer' ? s.omuz : s[e.verir];
+        const al = (e.verir !== 'lazer' && s[e.verir]) || s.omuz;
         if (!e.yapildi) bas(gx, al, e.x - al.lw / 2, ty + 16 - al.lh);
         continue;
       }

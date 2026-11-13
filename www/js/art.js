@@ -55,7 +55,7 @@ const Sanat = {
     s.omuz = this.omuz(r);
     s.sigorta = this.sigorta(r);
     const r2 = rngYap(31337);      // sonradan eklenenler: ayri tohum (eski gorsellerin dokusu degismesin)
-    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan', 'uzuv', 'hover', 'kafes', 'mayin', 'bekci', 'testere', 'kus']) s[ad] = this[ad](r2);
+    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan', 'uzuv', 'hover', 'kafes', 'mayin', 'bekci', 'testere', 'kus', 'miknatis', 'yem', 'agir']) s[ad] = this[ad](r2);
     s.oda = null;      // bitis odasi: ilk gerektiginde uretilir (odaAl)
     s.agaclar = {};
     // arka plan parcalari (3 derinlik)
@@ -1006,6 +1006,25 @@ const Sanat = {
     return c;
   },
   // ---- bolum 6-10 ----
+  // kaidede duran yetenekler: miknatis, yem yansiticisi, zaman duzenleyici
+  miknatis(r) {
+    return this._parca(r, 30, 26, '#6a757c', '#272e33', (x, f) => {
+      if (!f) { x.beginPath(); x.arc(15, 14, 12, 0, 3.1416); x.arc(15, 14, 5, 3.1416, 0, true); x.closePath(); x.fill(); x.fillRect(3, 2, 7, 12); x.fillRect(20, 2, 7, 12); }
+      else { x.fillStyle = '#8cafff'; x.fillRect(3, 2, 7, 3); x.fillRect(20, 2, 7, 3); }
+    });
+  },
+  yem(r) {
+    return this._parca(r, 30, 18, '#66717a', '#252c31', (x, f) => {
+      if (!f) { x.fillRect(2, 10, 26, 8); x.beginPath(); x.moveTo(8, 10); x.lineTo(11, 3); x.lineTo(19, 3); x.lineTo(22, 10); x.closePath(); x.fill(); }
+      else { x.fillStyle = '#78ebd7'; x.fillRect(12, 4, 6, 2); }
+    });
+  },
+  agir(r) {
+    return this._parca(r, 26, 28, '#69747b', '#262d32', (x, f) => {
+      if (!f) { x.beginPath(); x.arc(13, 15, 12, 0, 6.283); x.fill(); x.fillRect(9, 0, 8, 5); x.fillStyle = '#0d1012'; x.beginPath(); x.arc(13, 15, 8, 0, 6.283); x.fill(); }
+      else { x.strokeStyle = '#78aaff'; x.lineWidth = 1.6; x.beginPath(); x.moveTo(13, 15); x.lineTo(13, 9); x.moveTo(13, 15); x.lineTo(17, 17); x.stroke(); }
+    });
+  },
   mayin(r) {
     return this._parca(r, 38, 38, '#555f66', '#1b2125', (x, f) => {
       if (!f) {
