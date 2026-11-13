@@ -1,8 +1,8 @@
-// MaryoWorld - ayarlar. Her degisiklikte surum artirilir.
+// Son Sinyal - ayarlar. Her degisiklikte surum artirilir.
 'use strict';
 const CFG = {
-  surum: 'v0.15',
-  oyunAdi: 'MARYO WORLD',
+  surum: 'v0.16',
+  oyunAdi: 'SON SİNYAL',
 
   // Ekran (mantiksal cozunurluk; yukseklik sabit, genislik orana gore)
   H: 720,

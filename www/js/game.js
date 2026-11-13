@@ -1,4 +1,4 @@
-// MaryoWorld - ana dongu, kamera, katmanlar, isik, hava, tehditler, bulmacalar, etkilesim, bitis sahnesi
+// Son Sinyal - ana dongu, kamera, katmanlar, isik, hava, tehditler, bulmacalar, etkilesim, bitis sahnesi
 'use strict';
 
 (function () {

@@ -1,4 +1,4 @@
-# MaryoWorld - oyun notlari (v0.14)
+# Son Sinyal - oyun notlari (v0.16)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.

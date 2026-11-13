@@ -1,4 +1,4 @@
-# MaryoWorld - calisma kurallari
+# Son Sinyal (repo: MaryoWorld) - calisma kurallari
 
 Karanlik, atmosferik 2D platform oyunu (Inside tarzi). Mobil (yatay) hedefli, PC'de de test edilir.
 Oyun `www/` altinda; bagimliligi yok (saf Canvas 2D). Test: `www/index.html`.

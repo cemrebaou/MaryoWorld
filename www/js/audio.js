@@ -1,4 +1,4 @@
-// MaryoWorld - sesler (ayri modul). Oyun koduna dokunmaz: Robot.guncelle'yi sarar.
+// Son Sinyal - sesler (ayri modul). Oyun koduna dokunmaz: Robot.guncelle'yi sarar.
 // Dosyalar: assets/sounds/  rain.mp3 (ambiyans), step_1..10.mp3 (ayak basma), fx_*.mp3 (olay sesleri)
 'use strict';
 const SES = (function () {
