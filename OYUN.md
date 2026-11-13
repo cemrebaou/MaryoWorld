@@ -1,4 +1,4 @@
-# MaryoWorld - oyun notlari (v0.12)
+# MaryoWorld - oyun notlari (v0.13)
 
 ## Hikaye
 Insanligin kayboldugu bir dunya. Son yapay zeka ajani, yari insansi bir robot govdesinde bir insan ariyor.
@@ -241,3 +241,11 @@ Oyun `SES.cal(ad, siddet)` ile calar (game.js `ses()` uzakliga gore kisar).
 - Surunme tunellerindeki cift lazerlerin arasi acildi (~300 px).
 - Lazer yalnizca govde kirmizi cizgiye gercekten degince yakar (yatayda ve dikeyde pay birakildi).
 - Yanip sonen lazerlerin sonuk kalma suresi 0.2 sn uzadi (`periyot + 2.3`, yanik sure ayni).
+
+## v0.13
+- Uzuvlar tek renk cizgi degil: `Sanat.uzuv` dokulu parcasi `uzuv(x0, y0, x1, y1, kalinlik)` ile basilir (dortayak bacaklari, golge kollari, taret namlusu).
+- Golge artik bacaksiz: itici tablanin (`hover`) ustunde suzulur, yumusak hizlanir / durur (`d.v`), hizi 150; robot 230 px gecince uyanir.
+- Kanca yumusadi: cekilme 420 px/sn, yumusak kalkis-varis; robot halkanin 216 px altinda halatin ucunda hafifce sallanir.
+- Sel onden yayilir; duvara dayaninca su yukselir (`tavan`), merdivenle ya da ustteki halkayla son anda cikilir.
+- Kafesli sigortanin altinda siper (`kafes`) var: dogrudan lazer sipere carpar, yalnizca aynadan gelen isin vurur.
+- Kalkan keskin yay degil, yumusak isik. Tasiyicinin ustunde surunurken yerinde adim atmaz (`robot.tasiX`). Lazer sesi yenilendi.

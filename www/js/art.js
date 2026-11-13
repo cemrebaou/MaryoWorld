@@ -55,7 +55,7 @@ const Sanat = {
     s.omuz = this.omuz(r);
     s.sigorta = this.sigorta(r);
     const r2 = rngYap(31337);      // sonradan eklenenler: ayri tohum (eski gorsellerin dokusu degismesin)
-    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan']) s[ad] = this[ad](r2);
+    for (const ad of ['halka', 'kol', 'fare', 'boruAgiz', 'fan', 'ari', 'ayna', 'taret', 'kanca', 'jet', 'kalkan', 'uzuv', 'hover', 'kafes']) s[ad] = this[ad](r2);
     s.oda = null;      // bitis odasi: ilk gerektiginde uretilir (odaAl)
     s.agaclar = {};
     // arka plan parcalari (3 derinlik)
@@ -1004,6 +1004,34 @@ const Sanat = {
     });
     c.kokX = 26;
     return c;
+  },
+  // uzuv parcasi: bacak / kol kemigi (iki ucu mafsalli); oyunda dondurulup uzatilarak basilir
+  uzuv(r) {
+    return this._parca(r, 44, 12, '#566067', '#20262a', (x, f) => {
+      if (!f) {
+        x.fillRect(5, 2.5, 34, 7);
+        x.beginPath(); x.arc(6, 6, 6, 0, 6.283); x.arc(38, 6, 6, 0, 6.283); x.fill();
+        x.fillStyle = '#0d1012'; x.beginPath(); x.arc(6, 6, 2.2, 0, 6.283); x.arc(38, 6, 2.2, 0, 6.283); x.fill();
+        x.fillRect(14, 5, 16, 1.4);
+      }
+    });
+  },
+  // golgenin alti: havada tutan itici tabla
+  hover(r) {
+    return this._parca(r, 64, 18, '#4a535a', '#15191c', (x, f) => {
+      if (!f) {
+        x.beginPath(); x.moveTo(6, 0); x.lineTo(58, 0); x.lineTo(64, 9); x.lineTo(52, 18); x.lineTo(12, 18); x.lineTo(0, 9); x.closePath(); x.fill();
+        x.fillStyle = '#07090a'; x.fillRect(14, 12, 12, 4); x.fillRect(38, 12, 12, 4);
+      } else { x.fillStyle = 'rgba(150,185,255,0.75)'; x.fillRect(16, 15, 8, 1.6); x.fillRect(40, 15, 8, 1.6); }
+    });
+  },
+  // kafesli sigortanin alt siperi: lazeri alttan ve yandan keser, ustu (ayna tarafi) acik
+  kafes(r) {
+    return this._parca(r, 76, 46, '#5a646b', '#22292e', (x, f) => {
+      if (f) return;
+      x.beginPath(); x.moveTo(0, 0); x.lineTo(9, 0); x.lineTo(13, 30); x.lineTo(63, 30); x.lineTo(67, 0); x.lineTo(76, 0); x.lineTo(70, 46); x.lineTo(6, 46); x.closePath(); x.fill();
+      x.fillStyle = '#0d1012'; for (let i = 14; i < 64; i += 12) x.fillRect(i, 37, 6, 3);
+    });
   },
   // kaidede duran yetenekler: kanca, sirt iticisi, kalkan
   kanca(r) {

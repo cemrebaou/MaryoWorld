@@ -277,6 +277,7 @@ class Robot {
   tasi(dx, dy) {
     dy = dy || 0;
     this.x += dx; this.y += dy; this.sonZeminY += dy; this.kalcaY += dy;
+    this.tasiX = (this.tasiX || 0) + dx;      // tasiyicinin goturdugu yol: surunme adimi bunu saymaz
     for (let i = 0; i < 2; i++) {
       const a = this.ayak[i]; a.x += dx; a.sx += dx; a.tx += dx; a.y += dy; a.sy += dy; a.ty += dy;
       this.el[i].x += dx; this.el[i].y += dy;
@@ -303,11 +304,16 @@ class Robot {
     if (this.dis) {
       // kanca: halkaya dogru cekilir, varinca asili kalir. Yukari giderken once yukselir, inerken once yana gider (kose kesmesin)
       const D = this.dis;
-      if (D.t === undefined) { D.t = 0; D.x0 = this.x; D.y0 = this.y; D.sure = Math.max(0.2, Math.sqrt((D.x - this.x) * (D.x - this.x) + (D.y - this.y) * (D.y - this.y)) / 640); }
+      if (D.t === undefined) { D.t = 0; D.st = 0; D.x0 = this.x; D.y0 = this.y; D.yn = D.x >= this.x ? 1 : -1; D.sure = Math.max(0.42, Math.sqrt((D.x - this.x) * (D.x - this.x) + (D.y - this.y) * (D.y - this.y)) / 420); }
       D.t += dt;
-      const k = clamp(D.t / D.sure, 0, 1), ke = 1 - (1 - k) * (1 - k), kg = k * k, yukari = D.y < D.y0;
+      // yumusak kalkis ve varis; varinca halatin ucunda hafifce sallanir
+      const k = smooth(D.t / D.sure), ke = 1 - (1 - k) * (1 - k), kg = k * k, yukari = D.y < D.y0;
       this.x = lerp(D.x0, D.x, yukari ? kg : ke); this.y = lerp(D.y0, D.y, yukari ? ke : kg);
-      if (k >= 1) D.vardi = true;
+      if (D.t >= D.sure) {
+        D.vardi = true; D.st += dt;
+        const gen = 15 * Math.exp(-D.st * 0.8) + 3;
+        this.x = D.x + Math.sin(D.st * 3.0) * gen * D.yn; this.y = D.y - Math.abs(Math.sin(D.st * 3.0)) * gen * 0.12;
+      }
       this.vx = 0; this.vy = 0; this.yerde = false; this.sonZeminY = this.y; this.coyoteT = 0; this.tampon = 0;
       this.egilAcik = false; this.egilK = damp(this.egilK, 0, 13, dt); this.surunK = 0; this.etk = null; this.uzanK = 0;
       this.ziplaBasili = girdi.zipla;
@@ -525,17 +531,17 @@ class Robot {
   // ---- surunme: dort ayak, eller ve dizler yerde capraz sirayla ilerler ----
   _surun(dt) {
     const z = this.z, f = this.yon, P = 44;
-    const s = this.x * f;
+    const tx = this.tasiX || 0, s = (this.x - tx) * f;
     const q = [Math.round((s - 28) / P) * P, Math.round((s - 50) / P) * P + 22];
     this.havaK = damp(this.havaK, 0, 12, dt);
     for (let i = 0; i < 2; i++) {
       const a = this.ayak[i];
       a.hav = false; a.u = 0;
-      const ax = q[i] * f;
+      const ax = q[i] * f + tx;
       let ay = z.yuk(ax); if (ay >= CUKUR || Math.abs(ay - this.y) > 40) ay = this.y;
       a.x = damp(a.x, ax, 18, dt); a.y = damp(a.y, ay, 18, dt);
       const e = this.el[i];
-      const ex = (q[1 - i] + 98) * f;
+      const ex = (q[1 - i] + 98) * f + tx;
       let ey = z.yuk(ex); if (ey >= CUKUR || Math.abs(ey - this.y) > 40) ey = this.y;
       e.x = damp(e.x, ex, 18, dt); e.y = damp(e.y, ey - 4, 18, dt);
     }

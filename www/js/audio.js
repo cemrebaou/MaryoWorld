@@ -13,7 +13,7 @@ const SES = (function () {
   // Buradaki sayi her sesin temel seviyesidir.
   const FX = {
     pres: 0.81, dugme: 0.7, salter: 0.8, fis: 0.7, hucre: 0.7, red: 0.5, alarm: 0.6, hasar: 0.8, dustu: 0.8,
-    kapi: 0.9, kalas: 0.7, bariyer: 0.35, guc: 0.6, sev: 0.5, el: 0.45, buldum: 0.8, basamak: 0.16, elektrik: 0.4, sandik: 0.5, lazer: 0.45, vur: 0.6
+    kapi: 0.9, kalas: 0.7, bariyer: 0.35, guc: 0.6, sev: 0.5, el: 0.45, buldum: 0.8, basamak: 0.16, elektrik: 0.4, sandik: 0.5, lazer: 0.5, vur: 0.6
   };
   const fxDosya = (ad) => 'fx_' + ad + '.mp3';
 

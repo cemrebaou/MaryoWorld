@@ -251,7 +251,7 @@ function kurucu() {
   const tlamba = (x, kapali) => { const o = { x: x, y: z.y, h: 250, r: 175, kapali: !!kapali, kapali0: !!kapali }; B.lambalar.push(o); return o; };
   // golge: robot uy0..uy1 arasina girince uyanir, x0..x1 arasinda dolasir
   const golge = (bas, uy0, uy1, x0, x1) => {
-    const d = { tip: 'golge', x: bas, bas: bas, y: z.y, x0: x0, x1: x1, uyanX0: uy0, uyanX1: uy1, hiz: 105, yon: 1, yon0: 1,
+    const d = { tip: 'golge', x: bas, bas: bas, y: z.y, x0: x0, x1: x1, uyanX0: uy0, uyanX1: uy1, hiz: 150, v: 0, yon: 1, yon0: 1,
                 uyanik: false, isik: false, isikT: 0, yanT: 0, adim: 0, olu: false, oluT: 0, kosT: 0, bekle: 0 };
     B.dusmanlar.push(d); temiz(x0 - 200, x1 + 200);
     return d;
@@ -1093,8 +1093,9 @@ function bolum3() {
   cukur(110); z.duz(420); kontrol(z.x - 300); tlamba(z.x - 300); cukur(120); z.duz(700);
   alcak(z.x - 380, 170);
   z.duz(300);
-  kovala(t14, t14 - 520, z.x - 150, 168);
+  kovala(t14, t14 - 520, z.x - 150, 168).tavan = 236;       // sonda su yukselir: merdivenle ya da kancayla son anda cik
   duvarCik(260);
+  halka(z.x + 70, 300);
   z.duz(600);
   kontrol(z.x - 480); tlamba(z.x - 380);
   dusunce(z.x - 420, 'dSelBitti');
