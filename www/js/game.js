@@ -771,6 +771,7 @@
     olm.tip = tip || neden; olm.y = y || 0;
     ses(neden === 'yakalandi' ? 'alarm' : (neden === 'hasar' ? 'hasar' : 'dustu'));
     durum = 'geri'; dZaman = 0; geriNeden = neden; robot._yerlesti = false; robot.kilit = true;
+    if (typeof REKLAM !== 'undefined') REKLAM.olum();      // her 3 olumde bir gecis reklami (reklam.js)
     if (olm.tip !== 'dustu') kivEkle(robot.x, robot.y - (olm.tip === 'ezik' ? 20 : 80), olm.tip === 'yakalandi' ? 0 : 16);
     if (olm.tip === 'ezik') sars = Math.max(sars, 6);
   }

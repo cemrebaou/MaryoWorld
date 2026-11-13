@@ -10,7 +10,7 @@ Oyun `www/` altinda; bagimliligi yok (saf Canvas 2D). Test: `www/index.html`.
 - Repoya baska yapay zekalar da gonderiyor: gondermeden once `git pull --rebase` yapilir, cakismada iki taraf da korunur.
   Force push yapilmaz, gecmis silinmez.
 - Oyun bilgileri (olculer, bolum yapisi, kurallar) `OYUN.md` icinde tutulur; degisince guncellenir.
-- Dokunmatik dugmeler PC'de de gorunur kalir.
+- Dokunmatik dugmeler PC'de de gorunur kalir (tam ekran ve bolum dugmeleri v0.23'te kaldirildi).
 - Cizim kurali: duz ve parlak yuzey birakilmaz; her yeni gorselin ustunden `Sanat._eskit` (pas, toz, gren) gecilir.
   Gorseller `tuvalQ` ile yuksek cozunurlukte uretilir, `lw` / `lh` mantiksal olcusuyle basilir.
 - Oyun cevre etkilesimi + bulmaca agirliklidir; robotun aradigi insan oyuncudur (bkz. OYUN.md, bitis sahnesi).

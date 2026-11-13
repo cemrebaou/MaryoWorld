@@ -14,7 +14,16 @@ man = 'android/app/src/main/AndroidManifest.xml'
 s = oku(man)
 if 'screenOrientation' not in s:
     s = s.replace('<activity', '<activity\n            android:screenOrientation="sensorLandscape"', 1)
+if 'gms.ads.APPLICATION_ID' not in s:
+    s = s.replace('</application>', '    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="@string/admob_app_id" />\n    </application>', 1)
 yaz(man, s)
+
+# AdMob uygulama kimligi
+strs = 'android/app/src/main/res/values/strings.xml'
+t = oku(strs)
+if 'admob_app_id' not in t:
+    t = t.replace('</resources>', '    <string name="admob_app_id">ca-app-pub-7983529419004158~4030244222</string>\n</resources>')
+yaz(strs, t)
 
 stl = 'android/app/src/main/res/values/styles.xml'
 s = oku(stl)
